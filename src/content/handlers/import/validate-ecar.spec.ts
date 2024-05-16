@@ -38,7 +38,7 @@ describe('ValidateEcar', () => {
         expect(validateEcar).toBeTruthy();
     });
 
-    it('should read as text and remove recursivly', async (done) => {
+    it('should read as text and remove recursivly', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -57,12 +57,11 @@ describe('ValidateEcar', () => {
         // act
         await validateEcar.execute(request).catch((e) => {
             expect(e._errorMesg).toBe('IMPORT_FAILED_MANIFEST_FILE_NOT_FOUND');
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for NOT_COMPATIBLE ', async (done) => {
+    it('should read as text and remove recursivly for NOT_COMPATIBLE ', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -97,12 +96,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for status CONTENT_EXPIRED', async (done) => {
+    it('should read as text and remove recursivly for status CONTENT_EXPIRED', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -139,12 +137,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for status CONTENT_EXPIRED and visibilty is not default', async (done) => {
+    it('should read as text and remove recursivly for status CONTENT_EXPIRED and visibilty is not default', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -183,12 +180,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly if isRootExists to false', async (done) => {
+    it('should read as text and remove recursivly if isRootExists to false', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -231,12 +227,11 @@ describe('ValidateEcar', () => {
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
             expect(ContentUtil.isDraftContent).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly if existingContentModel is undefined', async (done) => {
+    it('should read as text and remove recursivly if existingContentModel is undefined', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -277,12 +272,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly if existingContentPath is undefined', async (done) => {
+    it('should read as text and remove recursivly if existingContentPath is undefined', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -323,12 +317,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for status ALREADY_EXIST', async (done) => {
+    it('should read as text and remove recursivly for status ALREADY_EXIST', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -369,12 +362,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for status ALREADY_EXIST and multiple items', async (done) => {
+    it('should read as text and remove recursivly for status ALREADY_EXIST and multiple items', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -416,12 +408,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly if existingContentPath is undefined', async (done) => {
+    it('should read as text and remove recursivly if existingContentPath is undefined', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -464,12 +455,11 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should faild import unsupported mainfest for archive items false', async (done) => {
+    it('should faild import unsupported mainfest for archive items false', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -504,12 +494,11 @@ describe('ValidateEcar', () => {
         await validateEcar.execute(request).catch((e) => {
             expect(e._errorMesg).toBe('IMPORT_FAILED_NO_CONTENT_METADATA');
             expect(mockFileService.readAsText).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should read as text and remove recursivly for manifestJson.ver error', async (done) => {
+    it('should read as text and remove recursivly for manifestJson.ver error', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -534,12 +523,11 @@ describe('ValidateEcar', () => {
         await validateEcar.execute(request).catch((e) => {
             expect(e._errorMesg).toBe('IMPORT_FAILED_UNSUPPORTED_MANIFEST');
             expect(mockFileService.readAsText).toHaveBeenCalled();
-            done();
         });
         // assert
     });
 
-    it('should faild import unsupported mainfest for archive items false', async (done) => {
+    it('should faild import unsupported mainfest for archive items false', async () => {
         // arrange
         const contentImportResponse: ContentImportResponse[] = [{
             identifier: 'SAMPLE_IDENTIFIER',
@@ -576,7 +564,6 @@ describe('ValidateEcar', () => {
             expect(val.body).toBe(request);
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });

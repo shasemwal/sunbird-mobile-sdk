@@ -34,20 +34,11 @@ global.cordova = {
         applicationDirectory: '/path',
         externalCacheDirectory: "file:///some_external_cache_root/some_path/"
     },
-    InAppBrowser: {
-        open: () => ({
-            addEventListener: () => {
-            },
-        }),
-    },
-    getAppVersion: {
-        getAppName: () => {}
-    }
 };
 
 global.plugins = {
-    SharedPreferences: {
-        getInstance: () => {
+    Preferences: {
+        configure: () => {
         }
     }
 };
@@ -84,7 +75,9 @@ global.sbutility = {
     },
     writeFile: () => {},
     getUtmInfo: () => {},
-    renameDirectory: () => {}
+    renameDirectory: () => {},
+    decodeJWTToken: () => {},
+    getJWTToken: () => {}
 };
 
 global.sbutility = {
@@ -101,7 +94,9 @@ global.sbutility = {
     copyDirectory: () => {},
     getFreeUsableSpace: () => {},
     canWrite: () => {},
-    getBuildConfigValue: () => {}
+    getBuildConfigValue: () => {},
+    decodeJWTToken: () => {},
+    getJWTToken: () => {}
 };
 
 global.customtabs = {

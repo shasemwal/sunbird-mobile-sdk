@@ -3,7 +3,6 @@ import {ApiService, AppInfo, DeviceInfo, DeviceRegisterRequest, FrameworkService
 import {of, throwError} from 'rxjs';
 import {mockSdkConfigWithSampleApiConfig} from './device-register-handler.spec.data';
 import {GetDeviceProfileHandler} from './get-device-profile-handler';
-import anything = jasmine.anything;
 
 describe('DeviceRegisterHandler', () => {
     let deviceRegisterHandler: DeviceRegisterHandler;
@@ -153,7 +152,7 @@ describe('DeviceRegisterHandler', () => {
                         expect.objectContaining({
                             _body: expect.objectContaining({
                                 request: expect.not.objectContaining({
-                                    userDeclaredLocation: anything()
+                                    userDeclaredLocation: jest.fn()
                                 })
                             })
                         })
@@ -244,7 +243,7 @@ describe('DeviceRegisterHandler', () => {
                             _body: expect.objectContaining({
                                 request: expect.objectContaining({
                                     userDeclaredLocation: expect.not.objectContaining({
-                                        declaredOffline: anything()
+                                        declaredOffline: jest.fn()
                                     })
                                 })
                             })
@@ -361,7 +360,7 @@ describe('DeviceRegisterHandler', () => {
                             expect.objectContaining({
                                 _body: expect.objectContaining({
                                     request: expect.not.objectContaining({
-                                        userDeclaredLocation: anything()
+                                        userDeclaredLocation: jest.fn()
                                     })
                                 })
                             })

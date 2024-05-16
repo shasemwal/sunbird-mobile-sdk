@@ -123,7 +123,7 @@ describe('ChildContentsHandler', () => {
         // assert
     });
 
-    it('should fetch content from DB', async (done) => {
+    it('should fetch content from DB', async () => {
         // arrange
         const request: HierarchyInfo[] = [{
             identifier: 'SAMPLE_IDENTIFIER_1',
@@ -174,7 +174,6 @@ describe('ChildContentsHandler', () => {
         await childContentHandler.getContentFromDB(request, identifier).then(() => {
             expect(mockGetContentDetailsHandler.fetchFromDB).toHaveBeenCalled();
             expect(mockGetContentDetailsHandler.fetchFromDBForAll).toHaveBeenCalled();
-            done();
         });
         // assert
     });
@@ -234,7 +233,7 @@ describe('ChildContentsHandler', () => {
         });
     });
 
-    it('should get ChildIdentifiers From Manifest for catch part', async (done) => {
+    it('should get ChildIdentifiers From Manifest for catch part', (done) => {
         // arrange
         mockFileService.readAsText = jest.fn().mockImplementation(() => Promise.reject('textbook'));
         // act

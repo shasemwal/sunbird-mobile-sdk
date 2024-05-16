@@ -51,7 +51,7 @@ describe('BearerTokenRefreshInterceptor', () => {
         expect(apiAuthenticator).toBeTruthy();
     });
 
-    it('should put bearerToken into local by invoked interceptResponse()', async(done) => {
+    it('should put bearerToken into local by invoked interceptResponse()', async() => {
         // arrange
         const res = new Response();
         res.responseCode = ResponseCode.HTTP_UNAUTHORISED;
@@ -76,11 +76,10 @@ describe('BearerTokenRefreshInterceptor', () => {
             // assert
             expect(mockSharedPreferences.putString).toHaveBeenCalledWith(ApiKeys.KEY_API_TOKEN, expect.any(String));
             expect(mockApiService.fetch).toHaveBeenCalled();
-            done();
         });
     });
 
-    it('should not put bearerToken into local if responseCode unavailable by invoked interceptResponse()', async(done) => {
+    it('should not put bearerToken into local if responseCode unavailable by invoked interceptResponse()', async() => {
         // arrange
         const res = new Response();
         const request = new Request.Builder()
@@ -94,7 +93,6 @@ describe('BearerTokenRefreshInterceptor', () => {
         // act
        await apiAuthenticator.interceptResponse(request, res).subscribe(() => {
             // assert
-            done();
         });
     });
 });

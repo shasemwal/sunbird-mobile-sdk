@@ -101,12 +101,11 @@ describe('ExtractEcar', () => {
             metadata: {FILE_SIZE: 1}
         };
         mockFileService.getMetaData = jest.fn().mockImplementation(() => {});
-    (mockFileService.getMetaData as jest.Mock).mockResolvedValue({modificationTime: 'July 20, 69 00:20:18', size: 16});
+        (mockFileService.getMetaData as jest.Mock).mockResolvedValue({modificationTime: 'July 20, 69 00:20:18', size: 16});
         (mockFileService.createDir as jest.Mock).mockResolvedValue({nativeURL: 'sample-native-url'});
         mockZipService.unzip = jest.fn((_, __, cd, err) => err());
         // act
         extractEcar.execute(request).catch(() => {
-            done();
         }).then(() => {
              // assert
             expect(mockFileService.getMetaData).toHaveBeenCalled();

@@ -2,8 +2,17 @@ import { CopyToDestination } from './copy-to-destination';
 import {FileService} from '../../../util/file/def/file-service';
 import {ContentEntry} from '../../db/schema';
 import {Response} from '../../../api';
+import { Device } from '@capacitor/device';
 
 declare const sbutility;
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 
 describe('CopyToDestination', () => {
     let copyToDestination: CopyToDestination;
@@ -21,9 +30,9 @@ describe('CopyToDestination', () => {
         expect(copyToDestination).toBeTruthy();
     });
 
-    it('should be copied a file by invoked exicute() for error MEssage', (done) => {
+    it('should be copied a file by invoked exicute() for error MEssage', () => {
         // arrange
-        window['device'] = { uuid: 'some_uuid', platform:'aandroid' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'aandroid' })) as any;
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
             server_data: 'SERVER_DATA',
@@ -52,7 +61,7 @@ describe('CopyToDestination', () => {
         copyToDestination = new CopyToDestination();
 
         response.body = exportContext;
-        spyOn(sbutility, 'copyFile').and.callFake((a, b, c, d, e) => {
+        jest.spyOn(sbutility, 'copyFile').mockReturnValue((a, b, c, d, e) => {
             setTimeout(() => {
                 setTimeout(() => {
                     d();
@@ -63,13 +72,12 @@ describe('CopyToDestination', () => {
         copyToDestination.execute(response, contentExportRequest).then((result) => {
             // assert
             expect(contentExportRequest.saveLocally).toBeTruthy();
-            done();
         }).catch((e) => {
            console.error(e);
         });
     });
 
-    it('should be copied a file by invoked exicute() for error MEssage', (done) => {
+    it('should be copied a file by invoked exicute() for error MEssage', () => {
         // arrange
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -99,7 +107,7 @@ describe('CopyToDestination', () => {
         copyToDestination = new CopyToDestination();
 
         response.body = exportContext;
-        spyOn(sbutility, 'copyFile').and.callFake((a, b, c, d, e) => {
+        jest.spyOn(sbutility, 'copyFile').mockReturnValue((a, b, c, d, e) => {
             setTimeout(() => {
                 setTimeout(() => {
                     e();
@@ -110,7 +118,6 @@ describe('CopyToDestination', () => {
         copyToDestination.execute(response, contentExportRequest).then((result) => {
             // assert
             expect(contentExportRequest.saveLocally).toBeFalsy();
-            done();
         });
     });
 

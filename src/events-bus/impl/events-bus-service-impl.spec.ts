@@ -32,7 +32,7 @@ describe('EventsBusServiceImpl', () => {
     describe('onInit()', () => {
         it('should log events if debug mode is enabled', (done) => {
             // arrange
-            spyOn(console, 'log');
+            jest.spyOn(console, 'log');
 
             eventsBusService.onInit().pipe(
                 take(1)
@@ -65,7 +65,7 @@ describe('EventsBusServiceImpl', () => {
                 }
             } as Partial<SdkConfig> as SdkConfig);
 
-            spyOn(console, 'log');
+            jest.spyOn(console, 'log');
 
             eventsBusService.onInit().pipe(
                 take(1)
@@ -92,7 +92,7 @@ describe('EventsBusServiceImpl', () => {
 
         it('should emit events to any registered observers', (done) => {
             // arrange
-            spyOn(console, 'log');
+            jest.spyOn(console, 'log');
 
             eventsBusService.onInit().pipe(
                 take(1)

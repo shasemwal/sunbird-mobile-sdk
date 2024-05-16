@@ -3,7 +3,16 @@ import { ApiService, CachedItemStore } from '../..';
 import { FaqServiceConfig, GetFaqRequest } from '..';
 import { FileService } from '../../util/file/def/file-service';
 import { of } from 'rxjs';
+import { Device } from '@capacitor/device';
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('GetFaqDetailsHandler', () => {
     let getFaqDetailsHandler: GetFaqDetailsHandler;
     const mockApiService: Partial<ApiService> = {};
@@ -54,7 +63,7 @@ describe('GetFaqDetailsHandler', () => {
 
     it('should fetch data from file', (done) => {
         // arrange
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' }) as any);
         const request: GetFaqRequest = {
             language: 'english',
             faqUrl: 'http://faq/url'
@@ -66,6 +75,29 @@ describe('GetFaqDetailsHandler', () => {
             // assert
             expect(mockCachedItemStore.getCached).toHaveBeenCalled();
             expect(mockFileservice.readFileFromAssets).toHaveBeenCalled();
+            done();
+        });
+    });
+
+    it('should handle error on fetch data from server', (done) => {
+        // arrange
+        const request: GetFaqRequest = {
+            language: 'english',
+            faqUrl: 'http://faq/url'
+        };
+        mockCachedItemStore.getCached = jest.fn().mockImplementation((a, b, c, d, e) => d());
+        const data = mockApiService.fetch =  jest.fn().mockImplementation(() => of({
+            body: {
+                error: {
+                    response: 'SAMPLE_RESPONSE'
+                },
+            }
+        }));
+
+        // act
+        getFaqDetailsHandler.handle(request).subscribe(() => {
+            // assert
+            expect(mockCachedItemStore.getCached).toHaveBeenCalled();
             done();
         });
     });

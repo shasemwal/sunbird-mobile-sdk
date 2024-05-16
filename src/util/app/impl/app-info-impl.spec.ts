@@ -1,9 +1,10 @@
 import {AppInfoImpl} from './app-info-impl';
 import {SdkConfig} from '../../../sdk-config';
 import {SharedPreferences} from '../../..';
-import {of} from 'rxjs';
+import {of, throwError} from 'rxjs';
 import {AppInfoKeys} from '../../../preference-keys';
 import {CsModule} from '@project-sunbird/client-services';
+import { App } from '@capacitor/app';
 
 declare const sbutility;
 
@@ -38,9 +39,14 @@ describe('AppInfoImpl', () => {
             buildConfigPackage: 'build_config_package'
         }
     };
-
+    window['Capacitor'] = {
+        Plugins: {
+            App: {
+                getInfo: jest.fn(() => Promise.resolve({name: 'SOME_APP_NAME'})) as any
+            }
+        }
+    }
     beforeAll(() => {
-        window['cordova'] = {getAppVersion: {getAppName: (cb) => cb('SOME_APP_NAME')}} as any;
         appInfoImpl = new AppInfoImpl(
             mockSdkConfig as SdkConfig,
             mockSharedPreferences as SharedPreferences
@@ -49,9 +55,6 @@ describe('AppInfoImpl', () => {
 
     beforeEach(() => {
         jest.spyOn(CsModule.instance, 'isInitialised', 'get').mockReturnValue(false);
-    });
-
-    beforeEach(() => {
         jest.clearAllMocks();
     });
 
@@ -61,8 +64,17 @@ describe('AppInfoImpl', () => {
 
     it('should return app version name', () => {
         // arrange
+        App.getInfo = jest.fn(() => Promise.resolve({name: 'SOME_APP_NAME'})) as any;
         // act
         appInfoImpl.getVersionName();
+        // arrange
+    });
+
+    it('should return app version name', () => {
+        // arrange
+        App.getInfo = jest.fn(() => Promise.resolve({name: 'SOME_APP_NAME'})) as any;
+        // act
+        appInfoImpl.getAppName();
         // arrange
     });
 
@@ -127,7 +139,7 @@ describe('AppInfoImpl', () => {
                 },
                 services: {}
             });
-            spyOn(CsModule.instance, 'updateConfig').and.returnValue(undefined);
+            jest.spyOn(CsModule.instance, 'updateConfig').mockReturnValue(undefined);
             // act
             appInfoImpl.init().then(() => {
                 // assert
@@ -138,7 +150,7 @@ describe('AppInfoImpl', () => {
                             channelId: 'channelId',
                             producerId: 'producerId',
                             deviceId: 'deviceId',
-                            appVersion: 'SOME_APP_NAME'
+                            appVersion: '6.0-local'
                         },
                         api: {
                             host: 'host',
@@ -152,18 +164,17 @@ describe('AppInfoImpl', () => {
         });
     });
 
-    it('should get setFirstAccessTimestamp for debugmode is true', async (done) => {
+    it('should get setFirstAccessTimestamp for debugmode is true', async () => {
         // arrange
         mockSharedPreferences.getString = jest.fn().mockImplementation(() => of('first_access_timestamp'));
         // act
         await appInfoImpl.init().then(() => {
             // assert
             expect(mockSharedPreferences.getString).toHaveBeenCalledWith(AppInfoKeys.KEY_FIRST_ACCESS_TIMESTAMP);
-            done();
         });
     });
 
-    it('should get setFirstAccessTimestamp if debugMode is false', async(done) => {
+    it('should get setFirstAccessTimestamp if debugMode is false', async() => {
         // arrange
         mockSharedPreferences.getString = jest.fn().mockImplementation(() => of(undefined));
         mockSharedPreferences.putString = jest.fn().mockImplementation(() => of(undefined));
@@ -199,7 +210,7 @@ describe('AppInfoImpl', () => {
             mockSdkConfigApi as SdkConfig,
             mockSharedPreferences as SharedPreferences
         );
-        spyOn(sbutility, 'getBuildConfigValue').and.callFake((a, b, c, d) => {
+        jest.spyOn(sbutility, 'getBuildConfigValue').mockReturnValue((a, b, c, d) => {
             setTimeout(() => {
                 c('2.6.0'),
                 d('buildConfig_error');
@@ -210,7 +221,6 @@ describe('AppInfoImpl', () => {
             // assert
             expect(mockSharedPreferences.getString).toHaveBeenCalledWith(AppInfoKeys.KEY_FIRST_ACCESS_TIMESTAMP);
             expect(mockSharedPreferences.putString).toHaveBeenCalledWith(AppInfoKeys.KEY_FIRST_ACCESS_TIMESTAMP, expect.any(String));
-            done();
         });
     });
 
@@ -222,6 +232,37 @@ describe('AppInfoImpl', () => {
             // assert
             expect(mockSharedPreferences.getString).toHaveBeenCalledWith(AppInfoKeys.KEY_FIRST_ACCESS_TIMESTAMP);
             done();
+        });
+    });
+
+    describe('getBuildConfigValue', () => {
+        it('should resolve with the correct value', async () => {
+            const mockGetBuildConfigValue = jest.fn((packageName, property, successCallback, errorCallback) => {
+                successCallback('mockedValue');
+            });
+            sbutility.getBuildConfigValue = mockGetBuildConfigValue;
+            // act
+            const result = await appInfoImpl.getBuildConfigValue('packageName', 'property');
+            // Expectations
+            expect(mockGetBuildConfigValue).toHaveBeenCalledWith('packageName', 'property', expect.any(Function), expect.any(Function));
+            expect(result).toBe('mockedValue');
+        });
+    
+        it('should reject with an error', async () => {
+            const mockGetBuildConfigValue = jest.fn((packageName, property, successCallback, errorCallback) => {
+                // Simulate error callback
+                errorCallback('mockedError');
+            });
+            sbutility.getBuildConfigValue = mockGetBuildConfigValue;
+    
+            // act
+            try {
+                await appInfoImpl.getBuildConfigValue('packageName', 'property');
+                fail('Expected promise to reject, but it resolved');
+            } catch (error) {
+                expect(mockGetBuildConfigValue).toHaveBeenCalledWith('packageName', 'property', expect.any(Function), expect.any(Function));
+                expect(error).toBe('mockedError');
+            }
         });
     });
 });

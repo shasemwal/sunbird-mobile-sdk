@@ -19,7 +19,7 @@ describe('CopyAsset', () => {
         expect(copyAsset).toBeTruthy();
     });
 
-    it('should be copied a file by invoked exicute() for error MEssage', async (done) => {
+    it('should be copied a file by invoked exicute() for error MEssage', async () => {
         // arrange
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -39,12 +39,11 @@ describe('CopyAsset', () => {
         };
         // act
         await copyAsset.execute(request).catch(() => {
-            done();
         });
         // assert
     });
 
-    it('should be copied a file by invoked exicute() if subCollectionIds is not matched', async (done) => {
+    it('should be copied a file by invoked exicute() if subCollectionIds is not matched', async () => {
         // arrange
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -64,12 +63,11 @@ describe('CopyAsset', () => {
         };
         // act
         await copyAsset.execute(request).catch(() => {
-            done();
         });
         // assert
     });
 
-    it('should be copied a file by invoked exicute()', async (done) => {
+    it('should be copied a file by invoked exicute()', async () => {
         // arrange
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -99,11 +97,10 @@ describe('CopyAsset', () => {
             // assert
             expect(d.body).toBeTruthy();
             expect(sbutility.copyFile).toBeTruthy();
-            done();
         });
     });
 
-    it('should be copied a file for sbutility plugin error', async (done) => {
+    it('should be copied a file for sbutility plugin error', async () => {
         // arrange
         const contentEntrySchema: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -133,7 +130,6 @@ describe('CopyAsset', () => {
             // assert
             expect(e.body).toBeTruthy();
             expect(sbutility.copyFile).toBeTruthy();
-            done();
         });
     });
 });

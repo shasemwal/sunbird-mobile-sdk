@@ -1,7 +1,16 @@
 import {PerformActoinOnContentHandler} from './perform-actoin-on-content-handler';
 import { StorageHandler } from '../storage-handler';
 import { ScanContentContext } from '../../def/scan-requests';
+import { Device } from '@capacitor/device';
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('PerformActoinOnContentHandler', () => {
     let performActoinOnContentHandler: PerformActoinOnContentHandler;
     const mockStorageHandler: Partial<StorageHandler> = {};
@@ -13,7 +22,7 @@ describe('PerformActoinOnContentHandler', () => {
     });
 
     beforeEach(() => {
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' })) as any;
         jest.clearAllMocks();
     });
 

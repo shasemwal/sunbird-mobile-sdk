@@ -5,7 +5,16 @@ import {CachedItemRequestSourceFrom, CachedItemStore} from '../../key-value-stor
 import {mockSdkConfigWithFormServiceConfig} from '../impl/form-service-impl.spec.data';
 import {FormRequest, FormServiceConfig} from '..';
 import {of} from 'rxjs';
+import { Device } from '@capacitor/device';
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('GetFormHandler', () => {
     let getFormHandler: GetFormHandler;
 
@@ -23,7 +32,7 @@ describe('GetFormHandler', () => {
     });
 
     beforeEach(() => {
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({platform: 'android'})) as any
         jest.clearAllMocks();
     });
 
@@ -31,7 +40,7 @@ describe('GetFormHandler', () => {
         expect(getFormHandler).toBeTruthy();
     });
 
-    it('should handle cachedItem when called with API', async (done) => {
+    it('should handle cachedItem when called with API', (done) => {
         // arrange
         const request: FormRequest = {
             type: 'sample_type',
@@ -77,7 +86,7 @@ describe('GetFormHandler', () => {
         });
     });
 
-    it('should handle cachedItem from server if not available', async (done) => {
+    it('should handle cachedItem from server if not available', (done) => {
         // arrange
         const request: FormRequest = {
             from: CachedItemRequestSourceFrom.SERVER,
@@ -85,7 +94,8 @@ describe('GetFormHandler', () => {
             subType: 'sample_subType',
             action: 'sample_action',
             rootOrgId: 'sample_rootOrgId',
-            framework: 'sample_framework'
+            framework: 'sample_framework',
+            component:'sample_comp'
         };
         mockCachedItemStore.getCached = jest.fn().mockImplementation(() => of({
             body: {

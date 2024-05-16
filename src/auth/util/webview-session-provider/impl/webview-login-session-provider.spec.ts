@@ -17,6 +17,7 @@ import {of} from 'rxjs';
 import {TelemetryService} from '../../../../telemetry';
 import {SunbirdSdk} from '../../../../sdk';
 import { JwtUtil } from '../../../../util/jwt-util';
+import { Device } from '@capacitor/device';
 
 const mockApiService: Partial<ApiService> = {};
 const mockEventsBusService: Partial<EventsBusService> = {};
@@ -34,7 +35,14 @@ const mockSunbirdSdk: Partial<SunbirdSdk> = {
     telemetryService: mockTelemetryService
 } as any;
 SunbirdSdk['_instance'] = mockSunbirdSdk as SunbirdSdk;
-
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('WebviewLoginSessionProvider', () => {
     let webviewLoginSessionProvider: WebviewLoginSessionProvider;
     const mockAccessToken = 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJsclI0MWpJNndlZmZoQldnaUpHSjJhNlowWDFHaE53a21IU3pzdzE0R0MwIn0.eyJqdGkiOiJmYjU3MzRiMC1kNDU0LTRkNDYtYmVmMC1lNzA4ZDg4Njc3OGQiLCJleHAiOjE1OTc1NTg2NTYsIm5iZiI6MCwiaWF0IjoxNTk3NDcyMjU2LCJpc3MiOiJodHRwczovL2Rldi5zdW5iaXJkZWQub3JnL2F1dGgvcmVhbG1zL3N1bmJpcmQiLCJhdWQiOiJwcm9qZWN0LXN1bmJpcmQtZGV2LWNsaWVudCIsInN1YiI6ImY6NWE4YTNmMmItMzQwOS00MmUwLTkwMDEtZjkxM2JjMGZkZTMxOjg0NTRjYjIxLTNjZTktNGUzMC04NWI1LWZhZGUwOTc4ODBkOCIsInR5cCI6IkJlYXJlciIsImF6cCI6InByb2plY3Qtc3VuYmlyZC1kZXYtY2xpZW50IiwiYXV0aF90aW1lIjowLCJzZXNzaW9uX3N0YXRlIjoiY2RjZTliNjAtOWVlNy00NGM4LThmNjAtOTE0NmQ5NWE5ODU3IiwiYWNyIjoiMSIsImFsbG93ZWQtb3JpZ2lucyI6WyJodHRwczovL2Rldi5zdW5iaXJkZWQub3JnIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sIm5hbWUiOiJNZW50b3IgRmlyc3QgVXNlciIsInByZWZlcnJlZF91c2VybmFtZSI6Im50cHRlc3QxMDQiLCJnaXZlbl9uYW1lIjoiTWVudG9yIEZpcnN0IiwiZmFtaWx5X25hbWUiOiJVc2VyIiwiZW1haWwiOiJ1cyoqKioqKioqQHRlc3Rzcy5jb20ifQ.some-signature';
@@ -54,7 +62,7 @@ describe('WebviewLoginSessionProvider', () => {
         jest.resetAllMocks();
         jest.clearAllMocks();
         jest.restoreAllMocks();
-        window['device'] = {uuid: 'some_uuid', platform:'android'};
+        Device.getInfo = jest.fn(() => Promise.resolve({uuid: 'some_uuid', platform:'android'})) as any;
         const mockPdata = {'id': 'staging.diksha.app', 'pid': 'sunbird.app', 'ver': '2.6.local.0-debug'};
         mockTelemetryService.buildContext = jest.fn().mockImplementation(() => {
             return of({
@@ -196,7 +204,7 @@ describe('WebviewLoginSessionProvider', () => {
         describe('when config case passes', () => {
             describe('when config case:password', () => {
                 it('should resolve session when API succeeds', (done) => {
-                    window['device'] = { uuid: 'some_uuid', platform:'ios' };
+                    Device.getInfo = jest.fn(() => Promise.resolve({uuid: 'some_uuid', platform:'android'})) as any;
                     webviewLoginSessionProvider = new WebviewLoginSessionProvider(
                         loginConfigForPassword,
                         mergeConfig,

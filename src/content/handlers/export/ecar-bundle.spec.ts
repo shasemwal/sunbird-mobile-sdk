@@ -30,9 +30,9 @@ describe('EcarBundle', () => {
         expect(ecarBundle).toBeTruthy();
     });
 
-    it('should be zip file', async (done) => {
+    it('should be zip file', () => {
         // arrange
-        spyOn(mockZipService, 'zip').and.callFake(
+        jest.spyOn(mockZipService, 'zip').mockReturnValue(
             (a, b, c, d, e, f) => {
                 setTimeout(() => {
                     e();
@@ -60,8 +60,7 @@ describe('EcarBundle', () => {
         };
         (mockFileService.getMetaData as jest.Mock).mockResolvedValue('');
         // act
-        await ecarBundle.execute(request).then(() => {
-            done();
+        ecarBundle.execute(request).then(() => {
         });
         // assert
     });

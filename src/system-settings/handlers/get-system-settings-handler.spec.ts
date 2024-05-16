@@ -5,7 +5,16 @@ import {GetSystemSettingsRequest, SystemSettings, SystemSettingsConfig} from '..
 import {FileService} from '../../util/file/def/file-service';
 import {CachedItemStore} from '../../key-value-store';
 import {of} from 'rxjs';
+import { Device } from '@capacitor/device';
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('GetSystemSettingsHandler', () => {
     let getSystemSettingsHandler: GetSystemSettingsHandler;
 
@@ -29,7 +38,7 @@ describe('GetSystemSettingsHandler', () => {
         expect(getSystemSettingsHandler).toBeTruthy();
     });
 
-    it('should handle cachedItem when called with api', async (done) => {
+    it('should handle cachedItem when called with api', (done) => {
         // arrange
         const request: GetSystemSettingsRequest = {
             id: 'sample_id'
@@ -57,14 +66,12 @@ describe('GetSystemSettingsHandler', () => {
     });
     it('should handle cachedItem when called with fileService', () => {
         // arrange
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' }) as any);
         const request: GetSystemSettingsRequest = {
             id: 'sample_id'
         };
         mockCachedItemStore.getCached = jest.fn().mockImplementation((a, b, c, d, e) => e());
-        mockFileService.readFileFromAssets = jest.fn().mockImplementation((result) => of({
-            result: result.response
-        }));
+        mockFileService.readFileFromAssets = jest.fn().mockImplementation((result) => of('{"result":{"result":{"response":""}}}'));
         // act
         getSystemSettingsHandler.handle(request).subscribe(() => {
             // assert

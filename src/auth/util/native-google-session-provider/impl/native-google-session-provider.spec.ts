@@ -4,9 +4,19 @@ import { ApiService } from '../../../../api/def/api-service';
 import { SunbirdSdk } from '../../../../sdk';
 import { NativeGoogleSessionProvider } from './native-google-session-provider';
 import { JwtUtil } from '../../../../util/jwt-util';
+import { Device } from '@capacitor/device';
 
 const mockSunbirdSdk: Partial<SunbirdSdk> = {};
 SunbirdSdk['_instance'] = mockSunbirdSdk as SunbirdSdk;
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
+
 describe('NativeGoogleSessionProvider', () => {
     let nativeGoogleSessionProvider: NativeGoogleSessionProvider;
     let mockNativeGoogleTokenProvider: Partial<Promise<NativeGoogleSessionProvider>> = {};
@@ -20,7 +30,7 @@ describe('NativeGoogleSessionProvider', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        window['device'] = { uuid: 'some_uuid', platform: 'ios' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform: 'ios' })) as any;
     });
 
     it('should create a instane of nativeGoogleSessionProvider', () => {
@@ -33,7 +43,7 @@ describe('NativeGoogleSessionProvider', () => {
                 return;
             });
         });
-        it('should return server response for google login', (done) => {
+        it('should return server response for google login', async() => {
             const mockSession = {
                 body: {
                     access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJHUnh4OHVyNDNwWEgzX1FNekJXZXJRUFdyWDAyUEprSzlDemwzaGM2MGZBIn0.eyJqdGkiOiJlYzMwNWNjOC1iZTZlLTRiM2YtODQ2Ni1lYmM4Y2Y0N2FiN2QiLCJleHAiOjE2NTM3MTgyNzgsIm5iZiI6MCwiaWF0IjoxNjUzNjMxOTg3LCJpc3MiOiJodHRwczovL3N0YWdpbmcuc3VuYmlyZGVkLm9yZy9hdXRoL3JlYWxtcy9zdW5iaXJkIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImY6OTc5NzM4YjctMjUzYy00YWRmLTk2NzMtYTg1N2VlYjg2MTE1OjIxNzY2YzQyLWNlMTItNGU2MC1iYzY0LTMwMzkyMmNlNjlmMSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFuZHJvaWQiLCJhdXRoX3RpbWUiOjE2NTM2MzE4NzgsInNlc3Npb25fc3RhdGUiOiI5OGU0M2U4Ni0wMGJiLTQxZWYtODk0Yy00OGQyNzkyNWU1ZTYiLCJhY3IiOiIxIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9mZmxpbmVfYWNjZXNzIiwibmFtZSI6IkFzZGYiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhc2RmX2RleGkiLCJnaXZlbl9uYW1lIjoiQXNkZiIsImZhbWlseV9uYW1lIjoiIiwiZW1haWwiOiJhcyoqQHlvcG1haWwuY29tIn0.C4cTX5PURgONh4rWGIzrX_bocHm6pnFbd6kWN1LkCjb2hRLdDMhvik3uGyWZ1VcCfF4KE7ryDu1-v2U6b6ysgDP8zgrkN7EX406uYTkSWSKNiUtdM4aOs5MVSkqFRyAPZOeesbV8FzjaHPIdMRgh2aL0nGM6cvhv5WGR3JkReVaPCdUuyemkQ-L5i-EKY3mRr-YIb6ZfwjfLiyI3dx3KGY27ZF7Ge_GGeQnkXGLrWTwJsm6NIb_9bm5NST4KretscCMFx0A6_FKjvK_jeQg38F2mk2iP_nSljqqOY2h0SRU97r9eblE4KarZrSYWiVv62--XLLz4VXZ0zMpPxuuzGA',
@@ -41,14 +51,25 @@ describe('NativeGoogleSessionProvider', () => {
                     userToken: 'SOME_USER_TOKEN'
                 }
             };
+            const nativeGoogleTokenProviderMock = jest.fn().mockResolvedValue({
+                idToken: 'mockedIdToken',
+                email: 'mockedEmail'
+            });
+            const callGoogleNativeLoginMock = jest.fn(() => of({
+                /* Mocked OAuthSession object */
+            })) as any;
+            nativeGoogleSessionProvider['callGoogleNativeLogin'] = callGoogleNativeLoginMock;    
             mockApiService.fetch = jest.fn(() => of(mockSession) as any);
             jest.spyOn(JwtUtil, 'decodeJWT').mockImplementation(() => Promise.resolve(`{ "iss": "https://staging.sunbirded.org/auth/realms/sunbird",
             "exp": 1711023727,
             "sub": "f:979738b7-253c-4adf-9673-a857eeb86115:372504c7-838a-433c-a24d-f8ac0ed5c480"}`));
-            nativeGoogleSessionProvider.provide().then(() => {
+            // act
+            await nativeGoogleSessionProvider.provide()
+            setTimeout(() => {
                 expect(mockApiService.fetch).toHaveBeenCalled();
-                done();
-            });
+                expect(nativeGoogleTokenProviderMock).toHaveBeenCalled();
+                expect(callGoogleNativeLoginMock).toHaveBeenCalledWith('mockedIdToken', 'mockedEmail');
+            }, 0);
         });
     });
 });

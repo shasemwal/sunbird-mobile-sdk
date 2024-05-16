@@ -5,7 +5,16 @@ import { FileService } from '../../util/file/def/file-service';
 import { CachedItemStore } from '../../key-value-store';
 import { LocationSearchCriteria } from '..';
 import { of } from 'rxjs';
+import { Device } from '@capacitor/device';
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('SearchLocationHandler', () => {
     let searchLocationHandler: SearchLocationHandler;
     const mockApiService: Partial<ApiService> = {};
@@ -41,13 +50,13 @@ describe('SearchLocationHandler', () => {
         mockApiService.fetch =  jest.fn().mockImplementation(() => of({ body: {result: ''}}));
         mockCachedItemStore.getCached = jest.fn().mockImplementation((a, b, c, d, e, f) => d());
         mockFileService.readFileFromAssets = jest.fn().mockImplementation(() => []);
-        spyOn(mockApiService, 'fetch').and.returnValue(of({
+        jest.spyOn(mockApiService, 'fetch').mockReturnValue(of({
             body: {
                 result: {
                     response: 'SAMPLE_RESPONSE'
                 }
             }
-        }));
+        }) as any);
         // act
         searchLocationHandler.handle(request).subscribe(() => {
             expect(mockCachedItemStore.getCached).toHaveBeenCalled();
@@ -57,7 +66,7 @@ describe('SearchLocationHandler', () => {
 
     it('should run handle function from the searchLocation Handler using fetchFromFile', () => {
         // arrange
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' }) as any);
         const request: LocationSearchCriteria = {
             filters: {
                 type: 'sample',

@@ -36,7 +36,7 @@ describe('KeyValueStoreImpl', () => {
         // arrange
         const key = 'SAMPLE_KEY';
         const value = 'SAMPLE_VALUE';
-        spyOn(keyValueStoreImpl, 'getValue').and.returnValue(of({}));
+        jest.spyOn(keyValueStoreImpl, 'getValue').mockReturnValue(of({}) as any);
         mockDbService.update = jest.fn().mockImplementation(() => of([]));
         // act
         keyValueStoreImpl.setValue(key, value).subscribe(() => {
@@ -51,7 +51,7 @@ describe('KeyValueStoreImpl', () => {
         // arrange
         const key = 'SAMPLE_KEY';
         const value = 'SAMPLE_VALUE';
-        spyOn(keyValueStoreImpl, 'getValue').and.returnValue(of(undefined));
+        jest.spyOn(keyValueStoreImpl, 'getValue').mockReturnValue(of(undefined));
         mockDbService.insert = jest.fn().mockImplementation(() => of([]));
         // act
         keyValueStoreImpl.setValue(key, value).subscribe(() => {

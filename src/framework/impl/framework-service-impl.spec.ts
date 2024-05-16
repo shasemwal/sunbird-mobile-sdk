@@ -140,7 +140,7 @@ describe('FrameworkServiceImpl', () => {
             },
             services: {}
         });
-        spyOn(CsModule.instance, 'updateConfig').and.returnValue(undefined);
+        jest.spyOn(CsModule.instance, 'updateConfig').mockReturnValue(undefined);
         // act
         frameworkService.setActiveChannelId(channelId).subscribe(() => {
             // assert

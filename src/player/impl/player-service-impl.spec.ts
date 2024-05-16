@@ -12,6 +12,16 @@ import {of} from 'rxjs';
 import {Content} from '../../content';
 import {Rollup} from '../../telemetry';
 import {DbService} from '../../db';
+import { Device } from '@capacitor/device';
+
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 
 describe('PlayerServiceImpl', () => {
     let playerService: PlayerService;
@@ -52,7 +62,7 @@ describe('PlayerServiceImpl', () => {
     });
 
     beforeEach(() => {
-        window['device'] = {uuid: 'some_uuid', platform: 'android'};
+        Device.getInfo = jest.fn(() => Promise.resolve({uuid: 'some_uuid', platform: 'android'})) as any;
         jest.clearAllMocks();
     });
 

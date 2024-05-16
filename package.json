@@ -1,13 +1,13 @@
 {
   "name": "@project-sunbird/sunbird-sdk",
-  "version": "7.0.19",
+  "version": "7.0.20",
   "description": "Heart of the sunbird mobile app.",
   "main": "index.js",
   "scripts": {
     "lint": "tslint --config ./tslint.json --project ./tsconfig.json",
     "test": "jest",
     "test:coverage": "jest --coverage --collectCoverageFrom=src/**/*.{ts,tsx}",
-    "test:ci": "jest --silent --ci --w 2 --collectCoverage=true --coverageReporters=lcov",
+    "test:ci": "jest --silent --ci --w 2 --detectOpenHandles --collectCoverage=true --coverageReporters=lcov",
     "test:ci-json": "jest --ci --w 2 --collectCoverage=true --coverageReporters=json",
     "build:prod": "rm -rf dist && NODE_ENV=production webpack --verbose true --progress true --cache false --output-file index.js && cp ./package.json ./LICENSE ./README.md ./dist",
     "build:analyze": "webpack --verbose true --progress true --cache false --profile --json > stats.json && npx webpack-bundle-analyzer ./stats.json",
@@ -16,6 +16,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor/app": "^5.0.6",
+    "@capacitor/core": "^5.5.1",
+    "@capacitor/device": "^5.0.6",
+    "@capacitor/network": "^5.0.6",
+    "@capacitor/browser": "^5.1.0",
+    "@capacitor/preferences": "^5.0.6",
+    "cordova-zip-plugin": "github:swayangjit/jjdltc-cordova-plugin-zip",
     "crypto-js": "3.1.9-1",
     "dayjs": "^1.9.8",
     "inversify": "^5.1.1",
@@ -28,35 +35,36 @@
     "whatwg-fetch": "^3.6.2"
   },
   "peerDependencies": {
-    "@project-sunbird/client-services": "7.0.4",
+    "@project-sunbird/client-services": "7.0.6",
     "rxjs": ">=6",
     "cordova-plugin-advanced-http": "^2.0.2",
-    "cordova-plugin-file": "^7.0.0",
+    "cordova-plugin-file": "8.0.0",
     "cordova-plugin-awesome-shared-preferences": "^0.1.0",
     "cordova-plugin-inappbrowser": "5.0.0",
-    "sb-cordova-plugin-customtabs": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-customtabs.git",
-    "sb-cordova-plugin-db": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-db.git",
+    "sb-cordova-plugin-customtabs": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-customtabs.git#release-5.0.2",
+    "sb-cordova-plugin-db": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-db.git#release-6.0.0",
     "jjdltc-cordova-plugin-zip": "git+https://github.com/swayangjit/jjdltc-cordova-plugin-zip.git",
     "cordova-plugin-android-downloadmanager": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-downloadmanager.git",
-    "sb-cordova-plugin-utility": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-utility/tree/release-6.0.0"
+    "sb-cordova-plugin-utility": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-utility.git#release-6.0.0"
   },
   "devDependencies": {
-    "@project-sunbird/client-services": "7.0.4",
-    "@types/jest": "^25.2.3",
+    "@project-sunbird/client-services": "7.0.6",
+    "@types/jest": "29.0.0",
     "@types/node": "12.0.2",
     "@types/node-fetch": "2.5.4",
     "@types/pako": "^1.0.4",
     "@types/websql": "0.0.27",
     "cordova-plugin-android-downloadmanager": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-downloadmanager.git",
-    "jest": "^25.5.4",
+    "jest": "29.0.0",
+    "jest-environment-jsdom": "^29.0.0",
     "rxjs": "^6.6.7",
-    "ts-jest": "^25.5.1",
+    "ts-jest": "29.1.2",
     "ts-loader": "^8.2.0",
     "ts-mockito": "^2.6.1",
-    "tsickle": "^0.27.2",
+    "tsickle": "0.41.0",
     "tslib": "^1.14.1",
     "tslint": "^5.20.1",
-    "typescript": "3.9.10",
+    "typescript": "4.3.5",
     "webpack": "^4.46.0",
     "webpack-cli": "^3.3.12"
   },
@@ -64,9 +72,12 @@
     "crypto": false
   },
   "jest": {
+    "preset": "ts-jest",
+    "verbose": true,
+    "testEnvironment": "jsdom",
     "globals": {
       "ts-jest": {
-        "tsConfig": "tsconfig.spec.json"
+        "tsconfig": "tsconfig.spec.json"
       }
     },
     "browser": false,

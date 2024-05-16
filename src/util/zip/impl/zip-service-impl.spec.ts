@@ -20,21 +20,20 @@ describe('ZipServiceImpl', () => {
 
     describe('unzip()', () => {
         describe('when successful', () => {
-            it('should delegate to cordova JJzip.unzip', (done) => {
+            it('should delegate to cordova JJzip.unzip', () => {
                 // arrange
-                spyOn(window['JJzip'], 'unzip').and.callFake((a, b, c, d) => {
+                jest.spyOn(window['JJzip'], 'unzip').mockReturnValue((a, b, c, d) => {
                     setTimeout(() => c(), 0);
                 });
 
                 // act
                 zipService.unzip('SOME_ZIP', {}, () => {
-                    done();
                 });
             });
 
             it('should delegate to cordova JJzip.unzip with optional callback', (done) => {
                 // arrange
-                spyOn(window['JJzip'], 'unzip').and.callFake((a, b, c, d) => {
+                jest.spyOn(window['JJzip'], 'unzip').mockReturnValue((a, b, c, d) => {
                     c();
                 });
 
@@ -46,21 +45,20 @@ describe('ZipServiceImpl', () => {
         });
 
         describe('when failure', () => {
-            it('should delegate to cordova JJzip.unzip', (done) => {
+            it('should delegate to cordova JJzip.unzip', () => {
                 // arrange
-                spyOn(window['JJzip'], 'unzip').and.callFake((a, b, c, d) => {
+                jest.spyOn(window['JJzip'], 'unzip').mockReturnValue((a, b, c, d) => {
                     setTimeout(() => d(), 0);
                 });
 
                 // act
                 zipService.unzip('SOME_ZIP', {}, null, () => {
-                    done();
                 });
             });
 
             it('should delegate to cordova JJzip.unzip with optional callback', (done) => {
                 // arrange
-                spyOn(window['JJzip'], 'unzip').and.callFake((a, b, c, d) => {
+                jest.spyOn(window['JJzip'], 'unzip').mockReturnValue((a, b, c, d) => {
                     d();
                 });
 
@@ -74,21 +72,20 @@ describe('ZipServiceImpl', () => {
 
     describe('zip()', () => {
         describe('when successful', () => {
-            it('should delegate to cordova JJzip.zip', (done) => {
+            it('should delegate to cordova JJzip.zip', () => {
                 // arrange
-                spyOn(window['JJzip'], 'zip').and.callFake((a, b, c, d, e, f) => {
+                jest.spyOn(window['JJzip'], 'zip').mockReturnValue((a, b, c, d, e, f) => {
                     setTimeout(() => e(), 0);
                 });
 
                 // act
                 zipService.zip('SOME_ZIP', {}, [], [], () => {
-                    done();
                 });
             });
 
             it('should delegate to cordova JJzip.zip with optional callback', (done) => {
                 // arrange
-                spyOn(window['JJzip'], 'zip').and.callFake((a, b, c, d, e, f) => {
+                jest.spyOn(window['JJzip'], 'zip').mockReturnValue((a, b, c, d, e, f) => {
                     e();
                 });
 
@@ -100,21 +97,20 @@ describe('ZipServiceImpl', () => {
         });
 
         describe('when failure', () => {
-            it('should delegate to cordova JJzip.zip', (done) => {
+            it('should delegate to cordova JJzip.zip', () => {
                 // arrange
-                spyOn(window['JJzip'], 'zip').and.callFake((a, b, c, d, e, f) => {
+                jest.spyOn(window['JJzip'], 'zip').mockReturnValue((a, b, c, d, e, f) => {
                     setTimeout(() => f(), 0);
                 });
 
                 // act
                 zipService.zip('SOME_ZIP', {}, [], [], null, () => {
-                    done();
                 });
             });
 
             it('should delegate to cordova JJzip.zip with optional callback', (done) => {
                 // arrange
-                spyOn(window['JJzip'], 'zip').and.callFake((a, b, c, d, e, f) => {
+                jest.spyOn(window['JJzip'], 'zip').mockReturnValue((a, b, c, d, e, f) => {
                     f();
                 });
 

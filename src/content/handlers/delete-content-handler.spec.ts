@@ -36,7 +36,7 @@ describe('DeleteContentHandler', () => {
     });
 
     describe('deleteAllChildren', () => {
-        it('should be deleted all children', async (done) => {
+        it('should be deleted all children', async () => {
             // arrange
             sbutility.getMetaData = jest.fn((_, cb) => cb({
                 'IDENTIFIER': {
@@ -90,11 +90,10 @@ describe('DeleteContentHandler', () => {
                 expect(mockDbService.endTransaction).toHaveBeenCalled();
                 expect(mockFileService.readAsText).toHaveBeenCalled();
                 expect(mockSharedPreferences.putString).toHaveBeenCalled();
-                done();
             });
         });
 
-        it('should be deleted all children for contentRootPath is undefined', async (done) => {
+        it('should be deleted all children for contentRootPath is undefined', async () => {
             // arrange
             sbutility.getMetaData = jest.fn((_, cb) => cb({
                 'IDENTIFIER': {
@@ -146,11 +145,10 @@ describe('DeleteContentHandler', () => {
                 expect(mockDbService.update).toHaveBeenCalled();
                 expect(mockDbService.endTransaction).toHaveBeenCalled();
                 expect(mockFileService.readAsText).toHaveBeenCalled();
-                done();
             });
         });
 
-        it('should be deleted all children for catch part', async (done) => {
+        it('should be deleted all children for catch part', async () => {
             // arrange
             sbutility.getMetaData = jest.fn((_, cb) => cb({
                 'IDENTIFIER': {
@@ -192,11 +190,10 @@ describe('DeleteContentHandler', () => {
                 expect(mockDbService.update).toHaveBeenCalled();
                 expect(mockDbService.endTransaction).toHaveBeenCalled();
                 expect(mockFileService.readAsText).toHaveBeenCalled();
-                done();
             });
         });
 
-        it('should be deleted all children for catch part', async (done) => {
+        it('should be deleted all children for catch part', async () => {
             // arrange
             sbutility.getMetaData = jest.fn((_, cb) => cb({
                 'IDENTIFIER': {
@@ -238,11 +235,10 @@ describe('DeleteContentHandler', () => {
                 expect(mockDbService.update).toHaveBeenCalled();
                 expect(mockDbService.endTransaction).toHaveBeenCalled();
                 expect(mockFileService.readAsText).toHaveBeenCalled();
-                done();
             });
         });
 
-        it('should return void for getMetaData error part', async (done) => {
+        it('should return void for getMetaData error part', async () => {
             // arrange
             sbutility.getMetaData = jest.fn((_, cb, err) => err({
                 error: 'error'
@@ -270,9 +266,7 @@ describe('DeleteContentHandler', () => {
             await deleteContentHandler.deleteAllChildren(request, true).then(() => {
                 expect(mockDbService.execute).toHaveBeenCalled();
                 expect(ArrayUtil.joinPreservingQuotes).toHaveBeenCalled();
-                done();
             }, (e) => {
-                done();
             });
             // assert
         });

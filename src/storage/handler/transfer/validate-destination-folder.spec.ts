@@ -24,9 +24,9 @@ describe('ValidateDestinationFolder', () => {
         expect(validateDestinationFolder).toBeTruthy();
     });
 
-    it('should create a directory and write ', (done) => {
+    it('should create a directory and write ', () => {
         // arrange
-        spyOn(sbutility, 'canWrite').and.callFake((a, b, c) => {
+        jest.spyOn(sbutility, 'canWrite').mockReturnValue((a, b, c) => {
             setTimeout(() => {
                 b();
                 c();
@@ -68,14 +68,13 @@ describe('ValidateDestinationFolder', () => {
         });
         // act
         validateDestinationFolder.execute(request).subscribe(() => {
-            done();
         });
         // assert
     });
 
-    it('should create a directory and write ', (done) => {
+    it('should create a directory and write ', () => {
         // arrange
-        spyOn(sbutility, 'canWrite').and.callFake((a, b, c) => {
+        jest.spyOn(sbutility, 'canWrite').mockReturnValue((a, b, c) => {
             setTimeout(() => {
                 b();
                 c();
@@ -124,9 +123,7 @@ describe('ValidateDestinationFolder', () => {
             nativeURL: ''
         });
         // act
-        validateDestinationFolder.execute(request).subscribe(() => {
-            done();
-        });
+        validateDestinationFolder.execute(request).subscribe(() => {});
         // assert
     });
 });

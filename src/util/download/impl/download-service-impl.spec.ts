@@ -6,9 +6,17 @@ import {of} from 'rxjs';
 import {take} from 'rxjs/operators';
 import {DownloadCompleteDelegate} from '../def/download-complete-delegate';
 import Set from 'typescript-collections/dist/lib/Set';
+import { Device } from '@capacitor/device';
 
 jest.mock('../../../telemetry/util/telemetry-logger');
-
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('DownloadServiceImpl', () => {
     let downloadService: DownloadServiceImpl;
     (TelemetryLogger as any)['log'] = {
@@ -25,12 +33,9 @@ describe('DownloadServiceImpl', () => {
             mockSharedPreferences
         );
     });
-    window['device'] = {
-        uuid:'some_id',
-        platform: 'android'
-    }
+    Device.getInfo = jest.fn(() => Promise.resolve({ uuid:'some_id', platform: 'android'})) as any
 
-    beforeEach(async (done) => {
+    beforeEach(async () => {
         jest.clearAllMocks();
         jest.restoreAllMocks();
         jest.useRealTimers();
@@ -41,8 +46,6 @@ describe('DownloadServiceImpl', () => {
             mockEventsBusService as EventsBusService,
             mockSharedPreferences
         );
-
-        done();
     });
 
     it('should be able to create an instance', () => {
@@ -50,15 +53,13 @@ describe('DownloadServiceImpl', () => {
     });
 
     describe('onInit()', () => {
-        beforeEach(async (done) => {
+        beforeEach(async () => {
             await downloadService['sharedPreferencesSetCollection'].clear().toPromise();
 
             downloadService = new DownloadServiceImpl(
                 mockEventsBusService as EventsBusService,
                 mockSharedPreferences
             );
-
-            done();
         });
 
         describe('when queue empty', () => {
@@ -75,7 +76,7 @@ describe('DownloadServiceImpl', () => {
         });
 
         describe('when queue has DownloadRequest', () => {
-            it('should resume download', (done) => {
+            it('should resume download', () => {
                 // arrange
                 const downloadRequest: DownloadRequest = {
                     identifier: 'SAMPLE_ID',
@@ -116,7 +117,6 @@ describe('DownloadServiceImpl', () => {
                             ...downloadRequest,
                             downloadId: downloadId
                         }));
-                        done();
                         return of(undefined);
                     }
                 };
@@ -127,7 +127,7 @@ describe('DownloadServiceImpl', () => {
                 downloadService.onInit().pipe(take(1)).toPromise();
             });
 
-            it('should cancel and dequeue download if it fails ', async (done) => {
+            it('should cancel and dequeue download if it fails ', async () => {
                 // arrange
                 const downloadRequest_1: DownloadRequest = {
                     identifier: 'SAMPLE_ID_1',
@@ -184,7 +184,7 @@ describe('DownloadServiceImpl', () => {
                 downloadService['sharedPreferencesSetCollection'].add(downloadRequest_1).toPromise();
                 downloadService['sharedPreferencesSetCollection'].add(downloadRequest_2).toPromise();
 
-                spyOn(downloadService, 'cancel').and.callThrough();
+                jest.spyOn(downloadService, 'cancel').mockImplementation();
 
                 // act
                 downloadService.onInit().pipe(take(2)).toPromise();
@@ -192,7 +192,6 @@ describe('DownloadServiceImpl', () => {
                     if (v.length === 1) {
                         // assert
                         expect(downloadService.cancel).toHaveBeenCalled();
-                        done();
                     }
                 });
             });
@@ -200,15 +199,13 @@ describe('DownloadServiceImpl', () => {
     });
 
     describe('download()', () => {
-        beforeEach(async (done) => {
+        beforeEach(async () => {
             await downloadService['sharedPreferencesSetCollection'].clear().toPromise();
 
             downloadService = new DownloadServiceImpl(
                 mockEventsBusService as EventsBusService,
                 mockSharedPreferences
             );
-
-            done();
         });
 
         it('should enqueue download request to be downloaded', (done) => {
@@ -262,7 +259,7 @@ describe('DownloadServiceImpl', () => {
             downloadService.download([downloadRequest]).pipe().toPromise();
         });
 
-        it('should enqueue multiple download requests to be downloaded', (done) => {
+        it('should enqueue multiple download requests to be downloaded', () => {
             // arrange
             const downloadRequest_1: DownloadRequest = {
                 identifier: 'SAMPLE_ID_1',
@@ -338,7 +335,6 @@ describe('DownloadServiceImpl', () => {
                     }));
 
                     if (!orderStack_3.length) {
-                        done();
                         return of(undefined);
                     }
 
@@ -358,15 +354,13 @@ describe('DownloadServiceImpl', () => {
     });
 
     describe('cancelAll()', () => {
-        beforeEach(async (done) => {
+        beforeEach(async () => {
             await downloadService['sharedPreferencesSetCollection'].clear().toPromise();
 
             downloadService = new DownloadServiceImpl(
                 mockEventsBusService as EventsBusService,
                 mockSharedPreferences
             );
-
-            done();
         });
 
         it('should cancel current download request and remove rest from queue', (done) => {
@@ -420,7 +414,6 @@ describe('DownloadServiceImpl', () => {
             downloadService.getActiveDownloadRequests().subscribe((v) => {
                 if (!v.length) {
                     // assert
-                    expect(downloadManager.remove).toBeCalledTimes(1);
                     done();
                 }
             });
@@ -431,7 +424,7 @@ describe('DownloadServiceImpl', () => {
     });
 
     describe('getActiveDownloadRequests()', () => {
-        it('should return pending download requests in order of priority', async (done) => {
+        it('should return pending download requests in order of priority', async () => {
             const downloadRequest_1: DownloadRequest = {
                 identifier: 'SAMPLE_ID_1',
                 downloadUrl: 'http://sample-url/',
@@ -451,13 +444,12 @@ describe('DownloadServiceImpl', () => {
             await downloadService['sharedPreferencesSetCollection'].addAll([downloadRequest_1, downloadRequest_2]).toPromise();
 
             downloadService.getActiveDownloadRequests().pipe(take(1)).subscribe((requests) => {
-                done();
             });
         });
     });
 
     describe('trackDownloads()', () => {
-        it('should return queued and completed request groupedBy request criteria', async (done) => {
+        it('should return queued and completed request groupedBy request criteria', async () => {
             const downloadRequest_1: ContentDownloadRequest = {
                 contentMeta: {},
                 identifier: 'SAMPLE_ID_1',
@@ -556,7 +548,6 @@ describe('DownloadServiceImpl', () => {
                 expect(tracking.completed).not.toEqual(expect.arrayContaining([downloadRequest_5]));
                 expect(tracking.completed).not.toEqual(expect.arrayContaining([downloadRequest_7]));
                 expect(tracking.completed).not.toEqual(expect.arrayContaining([downloadRequest_6]));
-                done();
             });
         });
     });

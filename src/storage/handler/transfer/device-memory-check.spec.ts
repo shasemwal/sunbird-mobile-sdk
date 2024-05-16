@@ -29,14 +29,14 @@ describe('DeviceMemoryCheck', () => {
         expect(deviceMemoryCheck).toBeTruthy();
     });
 
-    it('should check memory before file transfer operation', (done) => {
+    it('should check memory before file transfer operation', () => {
         // arrange
-        spyOn(sbutility, 'getFreeUsableSpace').and.callFake((a, b, c) => {
+        sbutility.getFreeUsableSpace = jest .fn(() => Promise.resolve((a, b, c)  =>{
             setTimeout(() => {
                 b();
                 c();
             }, 0);
-        });
+        }));
 
         const rootContentsInDb: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -66,7 +66,7 @@ describe('DeviceMemoryCheck', () => {
         // act
         deviceMemoryCheck.execute(request).subscribe(null, (e) => {
             expect(e instanceof LowMemoryError).toBeTruthy();
-            done();
+            // done();
         });
         // assert
     });

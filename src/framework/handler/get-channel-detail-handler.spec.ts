@@ -1,13 +1,20 @@
 import {CachedItemStore} from '../../key-value-store';
 import {FileService} from '../../util/file/def/file-service';
-import {Path} from '../../util/file/util/path';
 import {Channel, ChannelDetailsRequest, FrameworkServiceConfig, Framework} from '..';
-import {ApiRequestHandler, ApiService, HttpRequestType, Request} from '../../api';
+import {ApiService} from '../../api';
 import {of} from 'rxjs';
-import { ProfileService, DbService, TelemetryService } from '../..';
-import { Container } from 'inversify';
 import { GetChannelDetailsHandler } from './get-channel-detail-handler';
-import { exportDefaultDeclaration } from '@babel/types';
+import { Device } from '@capacitor/device';
+
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
+
 
 describe('GetChannelDetailHandler', () => {
 
@@ -33,7 +40,7 @@ describe('GetChannelDetailHandler', () => {
         expect(getChannelDetailHandler).toBeTruthy();
     });
 
-    it('should run handle function from the GetChannelDetailHandler', async (done) => {
+    it('should run handle function from the GetChannelDetailHandler', (done) => {
         // arrange
         const request: ChannelDetailsRequest = {
             channelId: 'SAMPLE_CHANNEL_ID'
@@ -75,7 +82,7 @@ describe('GetChannelDetailHandler', () => {
         expect(getChannelDetailHandler).toBeTruthy();
     });
 
-    it('should run handle function from the GetChannelDetailHandler if framework not available', async (done) => {
+    it('should run handle function from the GetChannelDetailHandler if framework not available', (done) => {
         // arrange
         const request: ChannelDetailsRequest = {
             channelId: 'SAMPLE_CHANNEL_ID'
@@ -108,7 +115,7 @@ describe('GetChannelDetailHandler', () => {
 
     it('should run handle function from the GetChannelDetailHandler', () => {
         // arrange
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' })) as any;
         const request: ChannelDetailsRequest = {
             channelId: 'SAMPLE_CHANNEL_ID'
         };
@@ -132,7 +139,9 @@ describe('GetChannelDetailHandler', () => {
             frameworks : [sampleframeworks]
         };
         mockCacheItemStore.getCached = jest.fn().mockImplementation((a, b, c, d, e) => e());
-        mockFileService.readFileFromAssets = jest.fn().mockImplementation(() => []);
+        mockFileService.readFileFromAssets = jest.fn(() => of(JSON.stringify({
+            result: {result: {channel: ''}}
+        }))) as any;
         // act
         getChannelDetailHandler.handle(request).subscribe(() => {
             expect(mockCacheItemStore.getCached).toHaveBeenCalled();

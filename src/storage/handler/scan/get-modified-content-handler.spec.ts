@@ -3,6 +3,15 @@ import { FileService } from '../../../util/file/def/file-service';
 import { DbService } from '../../..';
 import { ScanContentContext } from '../../def/scan-requests';
 import { of } from 'rxjs';
+import { Device } from '@capacitor/device';
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 
 describe('GetModifiedContentHandler', () => {
     let getModifiedContentHandler: GetModifiedContentHandler;
@@ -18,7 +27,7 @@ describe('GetModifiedContentHandler', () => {
     });
 
     beforeEach(() => {
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' })) as any;
         jest.clearAllMocks();
     });
 

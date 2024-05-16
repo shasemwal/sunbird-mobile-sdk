@@ -7,6 +7,7 @@ import { WebviewRunner } from "../../webview-session-provider/def/webview-runner
 import { WebviewSessionProviderConfig } from "../../webview-session-provider/def/webview-session-provider-config";
 import { NativeCustomBrowserSessionProvider } from "./native-custombrowser-session-provider";
 import * as qs from 'qs';
+declare const sbutility;
 
 jest.mock('@project-sunbird/client-services', () => {
     return {
@@ -146,7 +147,6 @@ describe('NativeCustomBrowserSessionProvider', () => {
     beforeEach(() => {
         jest.resetAllMocks();
         jest.restoreAllMocks();
-        window['device'] = {uuid: 'some_uuid', platform:'android'};
         const mockPdata = {'id': 'staging.diksha.app', 'pid': 'sunbird.app', 'ver': '2.6.local.0-debug'};
         mockTelemetryService.buildContext = jest.fn().mockImplementation(() => {
             return of({
@@ -162,31 +162,39 @@ describe('NativeCustomBrowserSessionProvider', () => {
     describe('provide()', () => {
         it('should build a google target url and launch custom tab', () => {
             // arrange
-            customWebViewConfig.get = jest.fn(() => true);
-            const successStack = [{
-                'refresh_token': mockRefreshToken,
-                'access_token': mockAccessToken,
-            }, {
-                'googleRedirectUrl': 'http://google_redirect_url.com'
-            }];
+            customWebViewConfig.get = jest.fn(() => 'extraParam');
+            // const successStack = [{
+            //     'refresh_token': mockRefreshToken,
+            //     'access_token': mockAccessToken,
+            // }, {
+            //     'googleRedirectUrl': 'http://google_redirect_url.com'
+            // }];
             const mockSession = {
-                access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJHUnh4OHVyNDNwWEgzX1FNekJXZXJRUFdyWDAyUEprSzlDemwzaGM2MGZBIn0.eyJqdGkiOiJlYzMwNWNjOC1iZTZlLTRiM2YtODQ2Ni1lYmM4Y2Y0N2FiN2QiLCJleHAiOjE2NTM3MTgyNzgsIm5iZiI6MCwiaWF0IjoxNjUzNjMxOTg3LCJpc3MiOiJodHRwczovL3N0YWdpbmcuc3VuYmlyZGVkLm9yZy9hdXRoL3JlYWxtcy9zdW5iaXJkIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImY6OTc5NzM4YjctMjUzYy00YWRmLTk2NzMtYTg1N2VlYjg2MTE1OjIxNzY2YzQyLWNlMTItNGU2MC1iYzY0LTMwMzkyMmNlNjlmMSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFuZHJvaWQiLCJhdXRoX3RpbWUiOjE2NTM2MzE4NzgsInNlc3Npb25fc3RhdGUiOiI5OGU0M2U4Ni0wMGJiLTQxZWYtODk0Yy00OGQyNzkyNWU1ZTYiLCJhY3IiOiIxIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9mZmxpbmVfYWNjZXNzIiwibmFtZSI6IkFzZGYiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhc2RmX2RleGkiLCJnaXZlbl9uYW1lIjoiQXNkZiIsImZhbWlseV9uYW1lIjoiIiwiZW1haWwiOiJhcyoqQHlvcG1haWwuY29tIn0.C4cTX5PURgONh4rWGIzrX_bocHm6pnFbd6kWN1LkCjb2hRLdDMhvik3uGyWZ1VcCfF4KE7ryDu1-v2U6b6ysgDP8zgrkN7EX406uYTkSWSKNiUtdM4aOs5MVSkqFRyAPZOeesbV8FzjaHPIdMRgh2aL0nGM6cvhv5WGR3JkReVaPCdUuyemkQ-L5i-EKY3mRr-YIb6ZfwjfLiyI3dx3KGY27ZF7Ge_GGeQnkXGLrWTwJsm6NIb_9bm5NST4KretscCMFx0A6_FKjvK_jeQg38F2mk2iP_nSljqqOY2h0SRU97r9eblE4KarZrSYWiVv62--XLLz4VXZ0zMpPxuuzGA',
-                refresh_token: 'SOME_REFRESH_TOKEN',
-                userToken: 'SOME_USER_TOKEN'
+                access_token: mockAccessToken,
+                refresh_token: mockRefreshToken,
+                userToken: 'asd:asas'
             };
-            mockWebviewRunner.success = jest.fn().mockImplementation(() => Promise.resolve(successStack.pop()));
+            mockWebviewRunner.success = jest.fn().mockImplementation(() => Promise.resolve(mockSession));
             mockWebviewRunner.launchCustomTab = jest.fn().mockImplementation(() => Promise.resolve());
+            sbutility.decodeJWTToken = jest.fn((accessToken, onSuccess) => {
+                onSuccess(JSON.stringify({sub: "asd:asas", exp: 3}));
+            });
             // act
             nativeCustomBrowserSessionProvider.provide().then((session) => {
                 // assert
-                expect(session).toEqual({
-                    access_token: 'eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJHUnh4OHVyNDNwWEgzX1FNekJXZXJRUFdyWDAyUEprSzlDemwzaGM2MGZBIn0.eyJqdGkiOiJlYzMwNWNjOC1iZTZlLTRiM2YtODQ2Ni1lYmM4Y2Y0N2FiN2QiLCJleHAiOjE2NTM3MTgyNzgsIm5iZiI6MCwiaWF0IjoxNjUzNjMxOTg3LCJpc3MiOiJodHRwczovL3N0YWdpbmcuc3VuYmlyZGVkLm9yZy9hdXRoL3JlYWxtcy9zdW5iaXJkIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImY6OTc5NzM4YjctMjUzYy00YWRmLTk2NzMtYTg1N2VlYjg2MTE1OjIxNzY2YzQyLWNlMTItNGU2MC1iYzY0LTMwMzkyMmNlNjlmMSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFuZHJvaWQiLCJhdXRoX3RpbWUiOjE2NTM2MzE4NzgsInNlc3Npb25fc3RhdGUiOiI5OGU0M2U4Ni0wMGJiLTQxZWYtODk0Yy00OGQyNzkyNWU1ZTYiLCJhY3IiOiIxIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6Im9mZmxpbmVfYWNjZXNzIiwibmFtZSI6IkFzZGYiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJhc2RmX2RleGkiLCJnaXZlbl9uYW1lIjoiQXNkZiIsImZhbWlseV9uYW1lIjoiIiwiZW1haWwiOiJhcyoqQHlvcG1haWwuY29tIn0.C4cTX5PURgONh4rWGIzrX_bocHm6pnFbd6kWN1LkCjb2hRLdDMhvik3uGyWZ1VcCfF4KE7ryDu1-v2U6b6ysgDP8zgrkN7EX406uYTkSWSKNiUtdM4aOs5MVSkqFRyAPZOeesbV8FzjaHPIdMRgh2aL0nGM6cvhv5WGR3JkReVaPCdUuyemkQ-L5i-EKY3mRr-YIb6ZfwjfLiyI3dx3KGY27ZF7Ge_GGeQnkXGLrWTwJsm6NIb_9bm5NST4KretscCMFx0A6_FKjvK_jeQg38F2mk2iP_nSljqqOY2h0SRU97r9eblE4KarZrSYWiVv62--XLLz4VXZ0zMpPxuuzGA',
-                    refresh_token: 'SOME_REFRESH_TOKEN',
-                    userToken: 'SOME_USER_TOKEN'
-                });
-                expect(mockWebviewRunner.launchCustomTab).toHaveBeenCalledWith({host: "url_origin",
-                    path: "some_pathname",
-                    params: qs.parse("url_searchParams", {ignoreQueryPrefix: true}),
+                expect(session).toEqual(mockSession);
+                expect(mockWebviewRunner.launchCustomTab).toHaveBeenCalledWith({host: "https://login.staging.ntp.net.in",
+                    path: "//google/auth",
+                    params: qs.parse({"client_id": "android",
+                    "error_callback": "OAUTH_REDIRECT_URL",
+                    "goBackUrl": "https://merge.staging.ntp.net.in/?exit=1",
+                    "merge_account_process": "1",
+                    "mergeaccountprocess": "1",
+                    "pdata": "{\"id\":\"staging.diksha.app\",\"pid\":\"sunbird.app\",\"ver\":\"2.6.local.0-debug\"}",
+                    "redirect_uri": "OAUTH_REDIRECT_URL",
+                    "response_type": "code",
+                    "scope": "offline_access",
+                    "version": "4",}, {ignoreQueryPrefix: true}),
                     extraParams: 'extraParam'})
                 return mockSession;
             });

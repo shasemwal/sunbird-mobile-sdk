@@ -5,9 +5,19 @@ import { FileService } from '../../../util/file/def/file-service';
 import { ImportContentContext, ContentImportResponse, ContentImportStatus } from '../..';
 import { ContentUtil } from '../../util/content-util';
 import { ContentEntry } from '../../db/schema';
+import { Device } from '@capacitor/device';
 
 declare const sbutility;
 
+
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('CreateContentImportManifest', () => {
     let createContentImportManifest: CreateContentImportManifest;
     const mockDbService: Partial<DbService> = {};
@@ -24,7 +34,7 @@ describe('CreateContentImportManifest', () => {
         );
     });
     beforeEach(() => {
-        window['device'] = { uuid: 'some_uuid', platform:'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform:'android' })) as any;
     });
 
     it('should be create a instance of createContentImportManifest', () => {

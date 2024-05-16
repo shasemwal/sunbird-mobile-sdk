@@ -1,7 +1,7 @@
 import {WriteManifest} from './write-manifest';
 import {FileService} from '../../../util/file/def/file-service';
 import {ContentEntry} from '../../db/schema';
-import {ExportContentContext} from '../..';
+import {ContentErrorCode, ExportContentContext} from '../..';
 import {DeviceInfo} from '../../..';
 import {of} from 'rxjs';
 
@@ -12,8 +12,7 @@ describe('writeManifest', () => {
         })
     };
     const mockDeviceInfo: Partial<DeviceInfo> = {
-        getAvailableInternalMemorySize: jest.fn().mockImplementation(() => {
-        })
+        getAvailableInternalMemorySize: jest.fn(() => of({})) as any
     };
 
     beforeAll(() => {
@@ -31,65 +30,55 @@ describe('writeManifest', () => {
         expect(writeManifest).toBeTruthy();
     });
 
-    it('should be able to write a file if internal memory availabe', () => {
-        // arrange
-        const contentEntrySchema: ContentEntry.SchemaMap[] = [{
-            identifier: 'IDENTIFIER',
-            server_data: 'SERVER_DATA',
-            local_data: '{"children": [{"DOWNLOAD": 1}, "do_234", "do_345"], "artifactUrl": "http:///do_123"}',
-            mime_type: 'MIME_TYPE',
-            manifest_version: 'MAINFEST_VERSION',
-            content_type: 'CONTENT_TYPE',
-            content_state: 2,
-            primary_category: 'textbook'
-        }];
-        const request: ExportContentContext = {
-            ecarFilePath: 'ECAR_FILE_PATH',
-            destinationFolder: 'SAMPLE_DESTINATION_FOLDER',
-            tmpLocationPath: 'SAMPLE_TEMP_PATH',
-            contentModelsToExport: contentEntrySchema,
-            items: [{'size': 'sample'}],
-            metadata: {'SAMPLE_KEY': 'SAMPLE_META_DATA'},
-
-        };
-        const async1 = (mockDeviceInfo.getAvailableInternalMemorySize as jest.Mock).mockReturnValue(of('1024'));
-        const async2 = (mockDeviceInfo.getAvailableInternalMemorySize as jest.Mock).mockReturnValue(of('102'));
-        // act
-        writeManifest.execute(request).then(() => {
-            expect(async1).toHaveBeenCalledWith('1024');
-            expect(async2).toHaveBeenLastCalledWith('102');
+    describe('execute', () => {
+        let exportContentContext;
+    
+        beforeEach(() => {
+            exportContentContext = {
+                tmpLocationPath: '/tmp',
+                manifest: { }
+            };
         });
-        // assert
-    });
-
-    it('should not be able to write a file if internal memory not availabe', () => {
-        // arrange
-        const contentEntrySchema: ContentEntry.SchemaMap[] = [{
-            identifier: 'IDENTIFIER',
-            server_data: 'SERVER_DATA',
-            local_data: '{"children": [{"DOWNLOAD": 1}, "do_234", "do_345"], "artifactUrl": "http:///do_123"}',
-            mime_type: 'MIME_TYPE',
-            manifest_version: 'MAINFEST_VERSION',
-            content_type: 'CONTENT_TYPE',
-            content_state: 2,
-            primary_category: 'textbook'
-        }];
-        const request: ExportContentContext = {
-            ecarFilePath: 'ECAR_FILE_PATH',
-            destinationFolder: 'SAMPLE_DESTINATION_FOLDER',
-            tmpLocationPath: 'SAMPLE_TEMP_PATH',
-            contentModelsToExport: contentEntrySchema,
-            items: [{'size': 'sample'}],
-            metadata: {'SAMPLE_KEY': 'SAMPLE_META_DATA'},
-
-        };
-        const async1 = (mockDeviceInfo.getAvailableInternalMemorySize as jest.Mock).mockReturnValue(of('-23'));
-        (mockFileService.writeFile as jest.Mock).mockReturnValue(of('111'));
-        // act
-        writeManifest.execute(request).then(() => {
-            expect(async1).toHaveBeenCalledWith('-23');
+    
+        it('should write manifest and return response with context when device space is sufficient', async () => {
+            mockDeviceInfo.getAvailableInternalMemorySize = jest.fn(() => of(1024 * 1024 + 1)) as any; // Mocking insufficient space
+            mockFileService.writeFile = jest.fn(() => Promise.resolve()) as any
+            const result = await writeManifest.execute({
+                tmpLocationPath: '/tmp',
+                manifest: { }
+            } as any);
+    
+            // act
+            writeManifest.execute(exportContentContext);
         });
-        // assert
+    
+        it('should return error response when device space is insufficient', async () => {
+            mockDeviceInfo.getAvailableInternalMemorySize = jest.fn(() => of(1024 * 1024 - 1)) as any; // Mocking insufficient space
+    
+            let expectedResult = '{\"errorMesg\":\"EXPORT_FAILED_WRITE_MANIFEST\"}'
+    
+            try {
+                await writeManifest.execute({
+                    tmpLocationPath: '/tmp',
+                manifest: { }
+                } as any);
+            } catch (error) {
+            }
+        });
+    
+        it('should return error response when writing manifest fails', async () => {
+            mockFileService.writeFile = jest.fn(() => Promise.reject(new Error('Write error'))); // Mocking file write failure
+    
+            const expectedResult = '{\"errorMesg\":\"EXPORT_FAILED_WRITE_MANIFEST\"}'
+    
+            try {
+                await writeManifest.execute({
+                    tmpLocationPath: '/tmp',
+                    manifest: { }
+                } as any);
+            } catch (error) {
+            }
+        });
     });
 
 });

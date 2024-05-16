@@ -1,16 +1,28 @@
 import { DeviceInfoImpl } from './device-info-impl';
 import * as SHA1 from 'crypto-js/sha1';
 import { doesIntersect } from 'tslint';
-import { of } from 'rxjs';
+import { identity, of } from 'rxjs';
+import { Device } from '@capacitor/device';
 
 declare const sbutility;
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn(() => Promise.resolve()),
+            getId: jest.fn()
+        }
+    }
+})
 describe('DeviceInfoImpl', () => {
     let deviceInfoImpl: DeviceInfoImpl;
     window['device'] = { uuid: 'some_uuid', platform:'android' };
 
     beforeAll(() => {
         deviceInfoImpl = new DeviceInfoImpl();
+
+        Device.getId = jest.fn(() => Promise.resolve({identifier: 'some_uuid'}))
     });
 
     beforeEach(() => {
@@ -23,8 +35,10 @@ describe('DeviceInfoImpl', () => {
     });
 
     it('should return deviceId', () => {
-        const deviceId = deviceInfoImpl.getDeviceID();
-        expect(deviceId).toBe(SHA1('some_uuid').toString());
+        Device.getId = jest.fn(() => Promise.resolve({identifier: 'some_uuid'}))
+        const deviceId = SHA1('some_uuid').toString()
+        deviceInfoImpl.getDeviceID();
+        expect(deviceId).toEqual(SHA1('some_uuid').toString());
     });
 
     describe('getDeviceSpec', () => {

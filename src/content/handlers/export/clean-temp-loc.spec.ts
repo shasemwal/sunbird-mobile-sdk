@@ -35,7 +35,7 @@ describe('CleanTempLoc', () => {
         expect(cleanTempLoc).toBeTruthy();
     });
 
-    it('should exportEcar and clean temporary location', async (done) => {
+    it('should exportEcar and clean temporary location', async () => {
         // arrange
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -68,11 +68,10 @@ describe('CleanTempLoc', () => {
             expect(mockFileService.listDir).toHaveBeenCalled();
             expect(FileUtil.getFileExtension).toReturn();
             expect(mockFileService.getMetaData).toHaveBeenCalled();
-            done();
         });
     });
 
-    it('should exportEcar and clean temporary location for error part', async (done) => {
+    it('should exportEcar and clean temporary location for error part', async () => {
         // arrange
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -104,11 +103,10 @@ describe('CleanTempLoc', () => {
             expect(mockFileService.listDir).toHaveBeenCalled();
             expect(FileUtil.getFileExtension).toReturn();
             expect(mockFileService.getMetaData).toHaveBeenCalled();
-            done();
         });
     });
 
-    it('should exportEcar and clean temporary location if file extention is not matched', async (done) => {
+    it('should exportEcar and clean temporary location if file extention is not matched', async () => {
         // arrange
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -136,11 +134,10 @@ describe('CleanTempLoc', () => {
             expect(e.body).toBeTruthy();
             expect(mockFileService.listDir).toHaveBeenCalled();
             expect(FileUtil.getFileExtension).toReturn();
-            done();
         });
     });
 
-    it('should exportEcar and clean temporary location if directoryList is empty', async (done) => {
+    it('should exportEcar and clean temporary location if directoryList is empty', async () => {
         // arrange
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -161,7 +158,6 @@ describe('CleanTempLoc', () => {
             // assert
             expect(e.body).toBeTruthy();
             expect(mockFileService.listDir).toHaveBeenCalled();
-            done();
         });
     });
 });

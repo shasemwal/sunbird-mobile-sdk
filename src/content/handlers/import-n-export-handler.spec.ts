@@ -62,7 +62,7 @@ describe('ImportNExportHandler', () => {
         done();
     });
 
-    it('should fetch all children from manifest.json file', async (done) => {
+    it('should fetch all children from manifest.json file', async () => {
         // arrange
         const request = ['content_id_1', 'content_id_2'];
         mockDbService.execute = jest.fn().mockImplementation(() => {
@@ -91,7 +91,6 @@ describe('ImportNExportHandler', () => {
             expect(mockFileService.readAsText).toHaveBeenCalled();
             expect(res[0].path!).toBe('sample_path');
             expect(ArrayUtil.joinPreservingQuotes).toHaveBeenCalled();
-            done();
         });
     });
 

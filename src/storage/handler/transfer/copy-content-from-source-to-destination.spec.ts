@@ -27,15 +27,15 @@ describe('CopyContentFromSourceToDestination', () => {
         expect(copyContentFromSourceToDestination).toBeTruthy();
     });
 
-    it('should handle storage transfer', (done) => {
+    it('should handle storage transfer', () => {
         // arrange
-        spyOn(sbutility, 'rm').and.callFake((a, b, c, d) => {
+        jest.spyOn(sbutility, 'rm').mockReturnValue((a, b, c, d) => {
             setTimeout(() => {
                 c(),
                 d();
             }, 0);
         });
-      //  spyOn(CancellationError, 'prototype').and.returnValue('CANCELLED');
+      //  jest.spyOn(CancellationError, 'prototype').mockReturnValue('CANCELLED');
         const rootContentsInDb: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
             server_data: 'SERVER_DATA',
@@ -55,13 +55,12 @@ describe('CopyContentFromSourceToDestination', () => {
         copyContentFromSourceToDestination.execute(request).subscribe(null, (e) => {
             // assert
             expect(e instanceof CancellationError).toBeTruthy();
-           done();
         });
     });
 
-    it('should handle storage transfer', (done) => {
+    it('should handle storage transfer', () => {
         // arrange
-        spyOn(sbutility, 'copyDirectory').and.callFake((a, b, c, d) => {
+        jest.spyOn(sbutility, 'copyDirectory').mockReturnValue((a, b, c, d) => {
             setTimeout(() => {
                c();
                d();
@@ -94,7 +93,6 @@ describe('CopyContentFromSourceToDestination', () => {
         };
         mockEventBusService.emit = jest.fn().mockImplementation(() => of({}));
         copyContentFromSourceToDestination.execute(request).subscribe(() => {
-            done();
         });
     });
 

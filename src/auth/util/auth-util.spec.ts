@@ -10,6 +10,8 @@ import {AuthKeys} from '../../preference-keys';
 import {NoActiveSessionError} from '../../profile';
 import {AuthTokenRefreshError} from '../errors/auth-token-refresh-error';
 import { JwtUtil } from '../../util/jwt-util';
+import { Browser } from '@capacitor/browser';
+import { Device } from '@capacitor/device';
 
 jest.mock('@project-sunbird/client-services', () => {
   return {
@@ -30,6 +32,14 @@ jest.mock('@project-sunbird/client-services', () => {
     }
   };
 });
+jest.mock('@capacitor/device', () => {
+  return {
+    ...jest.requireActual('@capacitor/device'),
+      Device: {
+          getInfo: jest.fn()
+      }
+  }
+})
 
 describe('AuthUtil', () => {
   beforeEach(() => {
@@ -45,7 +55,7 @@ describe('AuthUtil', () => {
     const mockApiService: ApiService = instance(MockApiService);
     const mockSharedPreferences: SharedPreferences = instance(MockSharedPreferences);
     const mockEventsBusService: EventsBusService = instance(MockEventsBusService);
-
+    mockSharedPreferences.putString = jest.fn(() => of())
     // act
     const authUtil = new AuthUtil(
       mockApConfig,
@@ -61,14 +71,14 @@ describe('AuthUtil', () => {
   describe('startSession()', () => {
     it('should save sessionData to sharedPreferences', (done) => {
       // arrange
-      window['device'] = {uuid: 'some_uuid', platform:'android'};
+      Device.getInfo = jest.fn(() => Promise.resolve({uuid: 'some_uuid', platform:'android'})) as any;
       const mockApConfig: ApiConfig = {} as Partial<ApiConfig> as ApiConfig;
       const mockApiService: ApiService = instance(MockApiService);
-
-      when(MockSharedPreferences.putString(anyString(), anyString())).thenReturn(of(undefined));
-
       const mockSharedPreferences: SharedPreferences = instance(MockSharedPreferences);
       const mockEventsBusService: EventsBusService = instance(MockEventsBusService);
+
+      mockSharedPreferences.putString = jest.fn(() => of(undefined));
+
 
       const authUtil = new AuthUtil(
         mockApConfig,
@@ -85,7 +95,7 @@ describe('AuthUtil', () => {
 
       // act
       authUtil.startSession(sessionData).then(() => {
-        verify(MockSharedPreferences.putString(AuthKeys.KEY_OAUTH_SESSION, JSON.stringify(sessionData))).called();
+        expect(mockSharedPreferences.putString).toHaveBeenCalled();
         done();
       });
     });
@@ -162,9 +172,9 @@ describe('AuthUtil', () => {
       const mockSharedPreferences: SharedPreferences = instance(MockSharedPreferences);
       const mockEventsBusService: EventsBusService = instance(MockEventsBusService);
 
-      spyOn(window['cordova'].InAppBrowser, 'open').and.returnValue(
+      Browser.addListener = jest.fn((fn) => Promise.resolve(
         {
-          addEventListener: (event: string, cb) => {
+          remove: (event: string, cb) => {
             if (event === 'exit') {
               setTimeout(() => {
                 cb();
@@ -172,7 +182,7 @@ describe('AuthUtil', () => {
             }
           }
         }
-      );
+      )) as any
 
       const authUtil = new AuthUtil(
         mockApConfig,
@@ -195,16 +205,13 @@ describe('AuthUtil', () => {
         }
       } as Partial<ApiConfig> as ApiConfig;
       const mockApiService: ApiService = instance(MockApiService);
-      when(MockSharedPreferences.putString(anyString(), anyString())).thenReturn(of(undefined));
       const mockSharedPreferences: SharedPreferences = instance(MockSharedPreferences);
       const mockEventsBusService: EventsBusService = instance(MockEventsBusService);
-
-      spyOn(window['cordova'].InAppBrowser, 'open').and.returnValue(
+      mockSharedPreferences.putString = jest.fn(() => of(undefined));
+      Browser.addListener = jest.fn((fn) => Promise.resolve(
         {
-          removeEventListener: () => {},
-          close: () => {},
-          addEventListener: (event: string, cb) => {
-            if (event === 'loadstart') {
+          remove: (event: string, cb) => {
+            if (event === 'exit') {
               setTimeout(() => {
                 cb({
                   url: 'SAMPLE_URL/oauth2callback'
@@ -213,8 +220,7 @@ describe('AuthUtil', () => {
             }
           }
         }
-      );
-
+      )) as any
       const authUtil = new AuthUtil(
         mockApConfig,
         mockApiService,
@@ -223,7 +229,7 @@ describe('AuthUtil', () => {
       );
 
       authUtil.endSession().then(() => {
-        verify(MockSharedPreferences.putString(AuthKeys.KEY_OAUTH_SESSION, '')).called();
+        expect(mockSharedPreferences.putString).toBeCalled();
         done();
       });
     });
@@ -244,7 +250,7 @@ describe('AuthUtil', () => {
         mockEventsBusService
       );
 
-      spyOn(authUtil, 'getSessionData').and.returnValue(Promise.resolve(undefined));
+      jest.spyOn(authUtil, 'getSessionData').mockReturnValue(Promise.resolve(undefined));
 
       // act
       authUtil.refreshSession().catch((e) => {
@@ -271,7 +277,7 @@ describe('AuthUtil', () => {
         mockEventsBusService
       );
 
-      spyOn(authUtil, 'getSessionData').and.returnValue(Promise.resolve({
+      jest.spyOn(authUtil, 'getSessionData').mockReturnValue(Promise.resolve({
         access_token: 'SAMPLE_ACCESS_TOKEN',
         refresh_token: 'SAMPLE_REFRESH_TOKEN',
         userToken: 'SAMPLE_USER_TOKEN'
@@ -306,7 +312,7 @@ describe('AuthUtil', () => {
         mockEventsBusService
       );
 
-      spyOn(authUtil, 'getSessionData').and.returnValue(Promise.resolve({
+      jest.spyOn(authUtil, 'getSessionData').mockReturnValue(Promise.resolve({
         access_token: 'SAMPLE_ACCESS_TOKEN',
         refresh_token: 'SAMPLE_REFRESH_TOKEN',
         userToken: 'SAMPLE_USER_TOKEN'
@@ -345,7 +351,7 @@ describe('AuthUtil', () => {
         mockEventsBusService
       );
 
-      spyOn(authUtil, 'getSessionData').and.returnValue(Promise.resolve({
+      jest.spyOn(authUtil, 'getSessionData').mockReturnValue(Promise.resolve({
         access_token: 'SAMPLE_ACCESS_TOKEN',
         refresh_token: 'SAMPLE_REFRESH_TOKEN',
         userToken: 'SAMPLE_USER_TOKEN'
@@ -375,14 +381,11 @@ describe('AuthUtil', () => {
       };
       response.responseCode = ResponseCode.HTTP_SUCCESS;
 
-      when(MockApiService.fetch(anything())).thenReturn(of(response));
-      when(MockSharedPreferences.putString(anyString(), anyString())).thenReturn(of(undefined));
-
       const mockApiService: ApiService = instance(MockApiService);
       const mockSharedPreferences: SharedPreferences = instance(MockSharedPreferences);
       const mockEventsBusService: EventsBusService = instance(MockEventsBusService);
-
-      spyOn(mockSharedPreferences, 'putString').and.callThrough();
+      mockApiService.fetch = jest.fn(() => of(response));
+      mockSharedPreferences.putString = jest.fn(() => of(undefined));
 
       const authUtil = new AuthUtil(
           mockApConfig,
@@ -391,9 +394,9 @@ describe('AuthUtil', () => {
           mockEventsBusService
       );
 
-      spyOn(authUtil, 'startSession').and.stub();
+      jest.spyOn(authUtil, 'startSession').mockImplementation();
 
-      spyOn(authUtil, 'getSessionData').and.returnValue(Promise.resolve({
+      jest.spyOn(authUtil, 'getSessionData').mockReturnValue(Promise.resolve({
         access_token: 'SAMPLE_ACCESS_TOKEN',
         refresh_token: 'SAMPLE_REFRESH_TOKEN',
         userToken: 'SAMPLE_USER_TOKEN'

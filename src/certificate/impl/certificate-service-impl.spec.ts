@@ -6,9 +6,18 @@ import { CertificateServiceImpl } from './certificate-service-impl';
 import { CsCertificateService, GetPublicKeyRequest, GetPublicKeyResponse } from '@project-sunbird/client-services/services/certificate';
 import { CsInjectionTokens } from '../../injection-tokens';
 import { GetPublicKeyHandler } from '../handlers/get-public-key-handler';
+import { Device } from '@capacitor/device';
 
 jest.mock('../handlers/get-public-key-handler');
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('CertificateServiceImpl', () => {
     let certificateServiceImpl: CertificateServiceImpl;
     const container = new Container();
@@ -38,7 +47,7 @@ describe('CertificateServiceImpl', () => {
         jest.resetAllMocks();
         jest.clearAllMocks();
         (GetPublicKeyHandler as jest.Mock<GetPublicKeyHandler>).mockClear();
-        window['device'] = { uuid: 'some_uuid', platform: 'android' };
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform: 'android' })) as any;
     });
 
     it('should be create a instance of certificateServiceImpl', () => {
@@ -142,7 +151,14 @@ describe('CertificateServiceImpl', () => {
             fileName: 'sample-cer',
             mimeType: 'certificate',
         } as any;
-        mockFileService.writeFile = jest.fn(() => Promise.resolve('certificate'));
+        let path = window['Capacitor'] = {
+            Plugins: {
+                Directory: { Data: {fileName: 'SOME_FILE_NAME'}}
+            }
+        }
+        mockFileService.writeFile = jest.fn(() => Promise.resolve({
+            path: path
+        })) as any
         certificateServiceImpl.downloadCertificate(req).subscribe(() => {
             expect(mockFileService.writeFile).toHaveBeenCalled();
             done();
@@ -150,7 +166,7 @@ describe('CertificateServiceImpl', () => {
     });
 
     describe('downloadLegacyeCertificate', () => {
-        it('should be successfully download the certificate', (done) => {
+        it('should be successfully download the certificate', () => {
             // arrange
             const courseCertificate = {
                 identifier: 'do-123',
@@ -164,6 +180,8 @@ describe('CertificateServiceImpl', () => {
                 courseId: 'sample-course-id',
                 certificate: courseCertificate
             };
+            Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform: 'android' })) as any;
+
             mockProfileService.getActiveProfileSession = jest.fn(() => of({
                 managedSession: {
                     uid: 'sample-uid'
@@ -180,7 +198,6 @@ describe('CertificateServiceImpl', () => {
             certificateServiceImpl.downloadLegacyeCertificate(request).subscribe(() => {
                 expect(mockProfileService.getActiveProfileSession).toHaveBeenCalled();
                 expect(mockCsCertificateService.getLegacyCerificateDownloadURI).toHaveBeenCalled();
-                done();
             });
         });
     });
@@ -239,13 +256,13 @@ describe('CertificateServiceImpl', () => {
         });
     });
 
-    it('should return encoded data', (done) => {
+    it('should return encoded data', () => {
         const request = 'decode_data';
         mockCsCertificateService.getEncodedData = jest.fn(() => Promise.resolve('coded_data'));
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid: 'some_uuid', platform: 'android' })) as any;
         certificateServiceImpl.getEncodedData(request);
         setTimeout(() => {
             expect(mockCsCertificateService.getEncodedData).toHaveBeenCalled();
-            done();
         }, 0);
     });
 

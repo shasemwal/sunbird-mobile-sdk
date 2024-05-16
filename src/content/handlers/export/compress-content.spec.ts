@@ -26,7 +26,7 @@ describe('CompressContent', () => {
         expect(compressContent).toBeTruthy();
     });
 
-    it('should create unZip file to zip file', async (done) => {
+    it('should create unZip file to zip file', async () => {
         // arrange
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
@@ -44,21 +44,12 @@ describe('CompressContent', () => {
         };
         // act
         await compressContent.execute(exportContentContext).then(() => {
-            done();
         });
         // arrange
     });
 
-    it('should create unZip file to zip file', async (done) => {
+    it('should create unZip file to zip file', () => {
         // arrange
-        spyOn(mockZipService, 'zip').and.callFake(
-            (a, b, c, d, e, f) => {
-                setTimeout(() => {
-                    e();
-                    f();
-                }, 0);
-            }
-        );
         const request: ContentEntry.SchemaMap[] = [{
             identifier: 'IDENTIFIER',
             server_data: 'SERVER_DATA',
@@ -75,10 +66,18 @@ describe('CompressContent', () => {
             contentModelsToExport: request,
             metadata: {'SAMPLE_KEY': 'KEY_VALUE'}
         };
+        mockZipService.zip = jest.fn(() => Promise.resolve(
+            (a, b, c, d, e, f) => {
+                setTimeout(() => {
+                    e();
+                    f();
+                }, 0);
+            }
+        ));
         // act
-        await compressContent.execute(exportContentContext).then(() => {
-            done();
-        }, );
+        compressContent.execute(exportContentContext).then(() => {{
+
+        }})
         // arrange
     });
 

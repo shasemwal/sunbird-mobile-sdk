@@ -47,13 +47,13 @@ describe('GetFrameworkDetailsHandler', () => {
         mockApiService.fetch =  jest.fn().mockImplementation(() => of({ body: {result: framework}}));
         mockCacheItemStore.getCached = jest.fn().mockImplementation((a, b, c, d, e) => d());
         mockFileService.readFileFromAssets = jest.fn().mockImplementation(() => []);
-        spyOn(mockApiService, 'fetch').and.returnValue(of({
+        jest.spyOn(mockApiService, 'fetch').mockReturnValue(of({
             body: {
                 result: {
                     response: 'SAMPLE_RESPONSE'
                 }
             }
-        }));
+        }) as any);
         // act
         getFrameworkDetailsHandler.handle(request).subscribe(() => {
              // assert

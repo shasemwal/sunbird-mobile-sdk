@@ -12,10 +12,19 @@ import {TelemetryImportDelegate} from '../import/impl/telemetry-import-delegate'
 import {DeviceInfo} from '../../util/device';
 import {NetworkQueue} from '../../api/network-queue';
 import {SdkConfig} from '../../sdk-config';
+import { Device } from '@capacitor/device';
 
 jest.mock('../export/impl/telemetry-export-delegate');
 jest.mock('../import/impl/telemetry-import-delegate');
 
+jest.mock('@capacitor/device', () => {
+    return {
+      ...jest.requireActual('@capacitor/device'),
+        Device: {
+            getInfo: jest.fn()
+        }
+    }
+})
 describe('ArchiveServiceImpl', () => {
     const mockFileService: Partial<FileService> = {};
     const mockDbService: Partial<DbService> = {};
@@ -95,7 +104,7 @@ describe('ArchiveServiceImpl', () => {
             ).toPromise().catch(() => {
                 // assert
                 expect(mockFileService.createDir).toHaveBeenCalledWith(
-                    expect.stringMatching(`${cordova.file.externalCacheDirectory}`),
+                    expect.stringMatching(`${window['cordova'].file.externalCacheDirectory}`),
                     false
                 );
 
@@ -326,10 +335,7 @@ describe('ArchiveServiceImpl', () => {
     });
 
     describe('import()', () => {
-        window['device'] = {
-            uuid:'some_id',
-            platform: 'android'
-        }
+        Device.getInfo = jest.fn(() => Promise.resolve({ uuid:'some_id', platform: 'android'})) as any
         it('should throw InvalidRequestError if no objects to import in request', (done) => {
             // act
             archiveService.import({
