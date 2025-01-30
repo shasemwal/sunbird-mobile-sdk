@@ -5,6 +5,6 @@ export declare class GetContentHeirarchyHandler implements ApiRequestHandler<Con
     private contentServiceConfig;
     private readonly GET_CONTENT_HEIRARCHY_ENDPOINT;
     constructor(apiService: ApiService, contentServiceConfig: ContentServiceConfig);
-    handle(request: ContentDetailRequest): import("../../../node_modules/rxjs/internal/Observable").Observable<any>;
+    handle(request: ContentDetailRequest): import("rxjs").Observable<any>;
     private mapContentFromContentHeirarchyData;
 }

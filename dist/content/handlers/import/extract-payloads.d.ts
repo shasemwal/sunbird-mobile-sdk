@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { ImportContentContext } from '../..';
 import { SharedPreferences } from '../../../util/shared-preferences';
 import { Response } from '../../../api';
@@ -18,7 +19,7 @@ export declare class ExtractPayloads {
     private eventsBusService;
     private sharedPreferences;
     constructor(fileService: FileService, zipService: ZipService, appConfig: AppConfig, dbService: DbService, deviceInfo: DeviceInfo, getContentDetailsHandler: GetContentDetailsHandler, eventsBusService: EventsBusService, sharedPreferences: SharedPreferences);
-    execute(importContext: ImportContentContext): Promise<Response>;
+    execute(importContext: ImportContentContext): Promise<[Response, NodeJS.Timeout]>;
     updateContentFileSizeInDB(importContext: ImportContentContext, commonContentModelsMap: any, payloadDestinationPathMap: any, result: any): Promise<void>;
     updateContentDB(insertNewContentModels: any, updateNewContentModels: any, updateSize?: boolean): Promise<void>;
     copyAssets(tempLocationPath: string, asset: string, payloadDestinationPath: string, useSubDirectories?: boolean): Promise<void>;
@@ -42,4 +43,12 @@ export declare class ExtractPayloads {
     private postImportProgressEvent;
     private constructContentDBModel;
     private createDirectories;
+    filterQuestionSetContent(items: any): any;
+    segregateQuestions(destinationRootDir: any, flattenedList: any): Promise<{
+        [key: string]: {
+            path: string | undefined;
+        };
+    }>;
+    private shouldDownloadQuestionSet;
+    private checkParentQustionSet;
 }

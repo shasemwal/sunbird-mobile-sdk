@@ -13,6 +13,7 @@ export interface WebviewRunner {
         params: {
             [key: string]: string;
         };
+        extraParams: string;
     }): Promise<void>;
     capture(args: {
         host: string;

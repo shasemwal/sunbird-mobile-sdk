@@ -21,6 +21,9 @@ export declare enum MimeType {
     VIDEO = "video/mp4",
     YOUTUBE = "video/x-youtube",
     WEBM = "video/webm",
+    QUESTION = "application/vnd.sunbird.question",
+    QUESTION_SET = "application/vnd.sunbird.questionset",
+    EPUB = "application/epub",
     ZIP = "application/zip",
     TXT = "text/plain",
     ECAR = "application/ecar",
@@ -85,5 +88,6 @@ export declare enum ErrorCode {
     IMPORT_FAILED = "IMPORT_FAILED"
 }
 export declare enum FileName {
-    MANIFEST = "manifest.json"
+    MANIFEST = "manifest.json",
+    HIERARCHY = "hierarchy.json"
 }
