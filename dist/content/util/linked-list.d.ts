@@ -2,7 +2,7 @@ export declare class LinkedNode<T> {
     next: LinkedNode<T> | null;
     private readonly _elem;
     constructor(elem: T);
-    readonly elem: T;
+    get elem(): T;
 }
 export declare class LinkedList<T> {
     private head;

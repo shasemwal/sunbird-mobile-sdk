@@ -1,7 +1,7 @@
 export declare class Stack<T> {
     private _stack;
     constructor(stack?: T[]);
-    readonly count: number;
+    get count(): number;
     push(item: T): void;
     pop(): T;
     clear(): void;

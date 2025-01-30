@@ -4,6 +4,16 @@ import { CorrelationData, Rollup } from '../../telemetry';
 import { ContentImportResponse } from './response';
 import { ContentEntry } from '../db/schema';
 import { DownloadRequest } from '../../util/download';
+import { CachedItemRequest } from '../../key-value-store';
+export interface ContentAggregatorRequest extends CachedItemRequest {
+    applyFirstAvailableCombination?: {
+        [key in keyof ContentData]?: string[];
+    };
+    userPreferences?: {
+        [key: string]: string[] | string | undefined;
+    };
+    interceptSearchCriteria?: (searchCriteria: ContentSearchCriteria) => ContentSearchCriteria;
+}
 export interface ContentDecorateRequest {
     content: Content;
     attachFeedback?: boolean;
@@ -12,6 +22,7 @@ export interface ContentDecorateRequest {
 }
 export interface ContentDetailRequest {
     contentId: string;
+    objectType?: string;
     emitUpdateIfAny?: boolean;
     attachFeedback?: boolean;
     attachContentAccess?: boolean;
@@ -19,7 +30,7 @@ export interface ContentDetailRequest {
 }
 export interface ContentRequest {
     uid?: string | string[];
-    contentTypes: string[];
+    primaryCategories: string[];
     audience?: string[];
     pragma?: string[];
     exclPragma?: string[];
@@ -34,6 +45,8 @@ export interface ContentRequest {
     board?: string[];
     medium?: string[];
     grade?: string[];
+    dialcodes?: string[];
+    childNodes?: string[];
 }
 export interface ContentSortCriteria {
     sortAttribute: string;
@@ -80,6 +93,7 @@ export interface ContentExportRequest {
     destinationFolder: string;
     contentIds: string[];
     saveLocally?: boolean;
+    subContentIds?: string[];
 }
 export interface ContentMarkerRequest {
     contentId: string;
@@ -132,6 +146,7 @@ export interface ContentSearchCriteria {
     mimeType?: string[];
     subject?: string[];
     fields?: string[];
+    primaryCategories?: string[];
 }
 export interface ContentSearchFilter {
     name: string;
@@ -144,6 +159,7 @@ export interface FilterValue {
     translations?: string;
     description?: string;
     index?: number;
+    values?: FilterValue[];
 }
 export interface ContentSortCriteria {
     sortAttribute: string;
@@ -179,6 +195,7 @@ export interface ExportContentContext {
         [key: string]: any;
     };
     manifest?: any;
+    subContentIds?: string[];
 }
 export interface ContentDownloadRequest extends DownloadRequest {
     contentMeta: Partial<Content>;

@@ -4,7 +4,7 @@ import { Batch, CourseBatchDetailsRequest, CourseServiceConfig } from '..';
 export declare class GetBatchDetailsHandler implements ApiRequestHandler<CourseBatchDetailsRequest, Batch> {
     private apiService;
     private courseServiceConfig;
-    readonly GET_BATCH_DETAILS_ENDPOINT: string;
+    readonly GET_BATCH_DETAILS_ENDPOINT = "/batch/read/";
     constructor(apiService: ApiService, courseServiceConfig: CourseServiceConfig);
     handle(request: CourseBatchDetailsRequest): Observable<Batch>;
 }

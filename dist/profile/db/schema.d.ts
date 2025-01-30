@@ -22,6 +22,7 @@ export declare namespace ProfileEntry {
     const COLUMN_NAME_SOURCE = "source";
     const COLUMN_NAME_GRADE_VALUE = "grade_value";
     const COLUMN_VALUE = "value";
+    const COLUMN_NAME_CATEGORIES = "categories";
     interface SchemaMap {
         [COLUMN_NAME_UID]: string;
         [COLUMN_NAME_HANDLE]: string;
@@ -34,10 +35,12 @@ export declare namespace ProfileEntry {
         [COLUMN_NAME_SYLLABUS]: string;
         [COLUMN_NAME_SOURCE]: string;
         [COLUMN_NAME_GRADE_VALUE]: string;
+        [COLUMN_NAME_CATEGORIES]?: string;
     }
     const getCreateEntry: () => string;
     const deleteTable: (() => string);
     const getAlterEntryForProfileSyllabus: (() => string);
+    const getAlterEntryForProfileCategories: (() => string);
 }
 export declare namespace UserEntry {
     const _ID = "_id";

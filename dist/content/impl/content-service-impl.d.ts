@@ -1,20 +1,27 @@
-import { ChildContentRequest, Content, ContentDelete, ContentDeleteRequest, ContentDeleteResponse, ContentDetailRequest, ContentDownloadRequest, ContentExportRequest, ContentExportResponse, ContentFeedbackService, ContentImportRequest, ContentImportResponse, ContentMarkerRequest, ContentRequest, ContentSearchCriteria, ContentSearchResult, ContentService, ContentsGroupedByPageSection, ContentSpaceUsageSummaryRequest, ContentSpaceUsageSummaryResponse, EcarImportRequest, HierarchyInfo, RelevantContentRequest, RelevantContentResponsePlayer } from '..';
+import { ChildContentRequest, Content, ContentDelete, ContentDeleteRequest, ContentDeleteResponse, ContentDetailRequest, ContentDownloadRequest, ContentExportRequest, ContentExportResponse, ContentFeedbackService, ContentImportRequest, ContentImportResponse, ContentMarkerRequest, ContentRequest, ContentSearchCriteria, ContentSearchResult, ContentService, ContentSpaceUsageSummaryRequest, ContentSpaceUsageSummaryResponse, EcarImportRequest, HierarchyInfo, RelevantContentRequest, RelevantContentResponsePlayer, SearchResponse } from '..';
 import { Observable } from 'rxjs';
-import { ApiService } from '../../api';
+import { ApiRequestHandler, ApiService } from '../../api';
 import { ProfileService } from '../../profile';
 import { DbService } from '../../db';
 import { FileService } from '../../util/file/def/file-service';
 import { ZipService } from '../../util/zip/def/zip-service';
 import { TelemetryService } from '../../telemetry';
+import { SearchRequest } from '../def/search-request';
 import { DownloadService } from '../../util/download';
 import { DownloadCompleteDelegate } from '../../util/download/def/download-complete-delegate';
 import { EventsBusService } from '../../events-bus';
 import { SharedPreferences } from '../../util/shared-preferences';
 import { CachedItemStore } from '../../key-value-store';
 import { SdkServiceOnInitDelegate } from '../../sdk-service-on-init-delegate';
+import { Container } from 'inversify';
 import { SdkConfig } from '../../sdk-config';
 import { DeviceInfo } from '../../util/device';
 import { AppInfo } from '../../util/app';
+import { ContentAggregator } from '../handlers/content-aggregator';
+import { FormService } from '../../form';
+import { CourseService } from '../../course';
+import { NetworkInfoService } from '../../util/network';
+import { StorageService } from '../../storage/def/storage-service';
 export declare class ContentServiceImpl implements ContentService, DownloadCompleteDelegate, SdkServiceOnInitDelegate {
     private sdkConfig;
     private apiService;
@@ -30,16 +37,21 @@ export declare class ContentServiceImpl implements ContentService, DownloadCompl
     private eventsBusService;
     private cachedItemStore;
     private appInfo;
+    private networkInfoService;
+    private container;
+    private storageService;
+    private static readonly DOWNLOAD_DIR_NAME;
     private static readonly KEY_IS_UPDATE_SIZE_ON_DEVICE_SUCCESSFUL;
     private static readonly KEY_CONTENT_DELETE_REQUEST_LIST;
-    private readonly SEARCH_CONTENT_GROUPED_BY_PAGE_SECTION_KEY;
     private readonly getContentDetailsHandler;
     private readonly getContentHeirarchyHandler;
     private readonly contentServiceConfig;
     private readonly appConfig;
+    private readonly questionSetFileReadHandler;
+    private readonly getChildQuestionSetHandler;
     private contentDeleteRequestSet;
-    constructor(sdkConfig: SdkConfig, apiService: ApiService, dbService: DbService, profileService: ProfileService, fileService: FileService, zipService: ZipService, deviceInfo: DeviceInfo, telemetryService: TelemetryService, contentFeedbackService: ContentFeedbackService, downloadService: DownloadService, sharedPreferences: SharedPreferences, eventsBusService: EventsBusService, cachedItemStore: CachedItemStore, appInfo: AppInfo);
-    private static getIdForDb;
+    private contentUpdateSizeOnDeviceTimeoutRef;
+    constructor(sdkConfig: SdkConfig, apiService: ApiService, dbService: DbService, profileService: ProfileService, fileService: FileService, zipService: ZipService, deviceInfo: DeviceInfo, telemetryService: TelemetryService, contentFeedbackService: ContentFeedbackService, downloadService: DownloadService, sharedPreferences: SharedPreferences, eventsBusService: EventsBusService, cachedItemStore: CachedItemStore, appInfo: AppInfo, networkInfoService: NetworkInfoService, container: Container, storageService: StorageService);
     onInit(): Observable<undefined>;
     getContentDetails(request: ContentDetailRequest): Observable<Content>;
     getContentHeirarchy(request: ContentDetailRequest): Observable<Content>;
@@ -60,15 +72,29 @@ export declare class ContentServiceImpl implements ContentService, DownloadCompl
     subscribeForImportStatus(contentId: string): Observable<any>;
     searchContent(contentSearchCriteria: ContentSearchCriteria, request?: {
         [key: string]: any;
-    }): Observable<ContentSearchResult>;
+    }, apiHandler?: ApiRequestHandler<SearchRequest, SearchResponse>, isFromContentAggregator?: boolean): Observable<ContentSearchResult>;
     cancelDownload(contentId: string): Observable<undefined>;
     setContentMarker(contentMarkerRequest: ContentMarkerRequest): Observable<boolean>;
-    searchContentGroupedByPageSection(request: ContentSearchCriteria): Observable<ContentsGroupedByPageSection>;
     onDownloadCompletion(request: ContentDownloadRequest): Observable<undefined>;
     getContentSpaceUsageSummary(contentSpaceUsageSummaryRequest: ContentSpaceUsageSummaryRequest): Observable<ContentSpaceUsageSummaryResponse[]>;
+    buildContentAggregator(formService: FormService, courseService: CourseService, profileService: ProfileService): ContentAggregator;
+    getQuestionList(questionIds: string[], parentId?: any): Observable<any>;
+    getQuestionSetHierarchy(data: any): Observable<import("@project-sunbird/client-services/services/content").CsContentGetQuestionSetHierarchyResponse>;
+    getQuestionSetRead(contentId: string, params?: any): Observable<import("@project-sunbird/client-services/services/content").CsContentGetQuestionSetResponse>;
+    getQuestionSetChildren(questionSetId: string): Promise<any>;
+    formatSearchCriteria(requestMap: {
+        [key: string]: any;
+    }): ContentSearchCriteria;
     private cleanupContent;
     private getMimeType;
-    private searchContentAndGroupByPageSection;
     private handleContentDeleteRequestSetChanges;
     private handleUpdateSizeOnDeviceFail;
+    private get contentServiceDelegate();
+    downloadTranscriptFile(transcriptReq: any): Promise<string | undefined>;
+    createTranscriptDir(req: any, dataDirectory: any): Promise<string | void>;
+    downloadTranscript(downloadRequest: any): Observable<{
+        path: string;
+    }>;
+    private copyFile;
+    private deleteFolder;
 }

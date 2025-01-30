@@ -17,12 +17,13 @@ export declare class WebviewRunnerImpl implements WebviewRunner {
     closeWebview(): Promise<void>;
     any<T>(...args: Promise<T>[]): Promise<T>;
     all(...args: Promise<any>[]): Promise<void>;
-    launchCustomTab({ host, path, params }: {
+    launchCustomTab({ host, path, params, extraParams }: {
         host: string;
         path: string;
         params: {
             [p: string]: string;
         };
+        extraParams: string;
     }): Promise<void>;
     capture({ host, path, params }: {
         host: string;
