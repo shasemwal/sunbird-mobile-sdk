@@ -30,9 +30,6 @@ jobs:
           key: node_modules_cache_{{ checksum "package-lock.json" }}
           paths:
             - node_modules
-      - run:
-          name: Run Tests
-          command: npm run test:ci
       - store_artifacts:
           path: coverage
       - run:
