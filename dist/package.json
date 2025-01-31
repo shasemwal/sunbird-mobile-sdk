@@ -1,6 +1,6 @@
 {
   "name": "@project-sunbird/sunbird-sdk",
-  "version": "7.0.24",
+  "version": "7.0.26",
   "description": "Heart of the sunbird mobile app.",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@capacitor/filesystem": "5.2.2",
     "ajv": "8.12.0",
     "crypto-js": "4.2.0",
     "dayjs": "^1.9.8",
@@ -31,15 +32,15 @@
   },
   "peerDependencies": {
     "@project-sunbird/client-services": "7.0.6",
-    "rxjs": ">=6",
     "cordova-plugin-advanced-http": "^2.0.2",
-    "cordova-plugin-file": "8.0.1",
+    "cordova-plugin-android-downloadmanager": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-downloadmanager.git",
     "cordova-plugin-awesome-shared-preferences": "^0.1.0",
+    "cordova-plugin-file": "8.0.1",
     "cordova-plugin-inappbrowser": "5.0.0",
+    "jjdltc-cordova-plugin-zip": "git+https://github.com/swayangjit/jjdltc-cordova-plugin-zip.git",
+    "rxjs": ">=6",
     "sb-cordova-plugin-customtabs": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-customtabs.git",
     "sb-cordova-plugin-db": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-db.git",
-    "jjdltc-cordova-plugin-zip": "git+https://github.com/swayangjit/jjdltc-cordova-plugin-zip.git",
-    "cordova-plugin-android-downloadmanager": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-downloadmanager.git",
     "sb-cordova-plugin-utility": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-utility/tree/release-6.0.0"
   },
   "devDependencies": {

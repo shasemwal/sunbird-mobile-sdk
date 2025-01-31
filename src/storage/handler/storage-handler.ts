@@ -18,7 +18,7 @@ export class StorageHandler {
 
     public async addDestinationContentInDb(identifier: string, storageFolder: string, keepLowerVersion: boolean) {
         const destinationPath = storageFolder.concat(identifier);
-        this.fileService.readAsText(
+        await this.fileService.readAsText(
             storageFolder.concat(identifier),
             FileName.MANIFEST.valueOf()
         ).then((manifestStringified) => {

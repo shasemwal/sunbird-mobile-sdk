@@ -10,8 +10,8 @@ export class DeviceMemoryCheck {
     constructor(private fileService: FileService) {
     }
 
-    execute(importContext: ImportContentContext): Promise<Response> {
-        return this.fileService.getFreeDiskSpace().then((size) => {
+    async execute(importContext: ImportContentContext): Promise<Response> {
+        return await this.fileService.getFreeDiskSpace().then((size) => {
             this.freeDiskSpace = size;
             return this.fileService.getMetaData(importContext.ecarFilePath);
         }).then((metaData) => {

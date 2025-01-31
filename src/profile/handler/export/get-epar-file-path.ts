@@ -11,8 +11,8 @@ export class GetEparFilePath {
         const response: Response = new Response();
         const fileName = `profiles_${dayjs().format('YYYYMMDDhhmmss')}.epar`;
         return await this.fileService.createDir(exportContext.destinationFolder!.concat('Profile'), false)
-            .then((directoryEntry: any) => {
-                return this.fileService.createFile(directoryEntry.nativeURL, fileName, true);
+            .then(async (directoryEntry: any) => {
+                return await this.fileService.createFile(directoryEntry.nativeURL, fileName, true);
             }).then((fileEntry: any) => {
                 exportContext.destinationDBFilePath = fileEntry.nativeURL;
                 response.body = exportContext;

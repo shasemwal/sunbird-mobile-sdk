@@ -134,7 +134,7 @@ export class ExtractPayloads {
                     let payloadDirectory = (window.device.platform.toLowerCase() === "ios") ? 
                         ContentUtil.getContentRootDir(importContext.destinationFolder).concat(identifier):
                         ContentUtil.getContentRootDir(importContext.destinationFolder).concat('/', identifier);
-                    const payloadDestinationDirectoryEntry: DirectoryEntry = await this.fileService.createDir(payloadDirectory
+                    const payloadDestinationDirectoryEntry:any = await this.fileService.createDir(payloadDirectory
                                                 , false);
                     payloadDestination = payloadDestinationDirectoryEntry.nativeURL;
                 }
@@ -350,9 +350,9 @@ export class ExtractPayloads {
                 if(window.device.platform.toLowerCase() === "ios") {
                     // * checking if file exist, then delete the file
                     await this.fileService.exists(payloadDestinationPath.concat('/', asset))
-                    .then(entry => {
+                    .then(async entry => {
                         if (entry) {
-                            this.fileService.removeFile(payloadDestinationPath.concat('/', asset)).then();
+                            await this.fileService.removeFile(payloadDestinationPath.concat('/', asset)).then();
                         }
                     })
                     .catch(error => {

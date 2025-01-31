@@ -35,39 +35,40 @@ export class FileServiceImpl implements FileService {
             directory: Directory.Documents,
             encoding: Encoding.UTF8
         });
-        let fileData: string | Blob = result.data;
-        if (typeof fileData === 'string') {
-            fileData = new Blob([fileData]);
+    
+        let blobData: Blob;
+        if (typeof result.data === 'string') {
+            blobData = new Blob([result.data], { type: 'text/plain' });
+        } else if (result.data instanceof Blob) {
+            blobData = result.data;
+        } else {
+            throw new Error('Expected a string or Blob');
         }
-        if (!(fileData instanceof Blob)) {
-            throw new Error('Expected a Blob');
-        }
-        return await new Promise<string>((resolve, reject) => {
+    
+        return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = () => reject(new Error('Failed to read Blob'));
-            reader.readAsText(fileData);
+            reader.readAsText(blobData);
         });
     }
 
-    async readAsBinaryString(path: string, filePath: string): Promise<string> {
-        const result = await Filesystem.readFile({
-            path: `${path}/${filePath}`,
-            directory: Directory.Documents,
-            encoding: Encoding.UTF8
-        });
-        let fileData: string | Blob = result.data;
+    async readAsBinaryString(fileData: string | Blob): Promise<string> {
+        let blobData: Blob;
+        
         if (typeof fileData === 'string') {
-            fileData = new Blob([fileData]);
+            blobData = new Blob([fileData], { type: 'text/plain' });
+        } else if (fileData instanceof Blob) {
+            blobData = fileData;
+        } else {
+            throw new Error('Expected a string or Blob');
         }
-        if (!(fileData instanceof Blob)) {
-            throw new Error('Expected a Blob');
-        }
-        return await new Promise<string>((resolve, reject) => {
+    
+        return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
             reader.onerror = () => reject(new Error('Failed to read Blob'));
-            reader.readAsBinaryString(fileData);
+            reader.readAsBinaryString(blobData);
         });
     }
 

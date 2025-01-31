@@ -19,20 +19,21 @@ export class CleanTempLoc {
                 if (FileUtil.getFileExtension(directory.nativeURL) === FileExtension.CONTENT) {
                     const metaData: Metadata = await this.fileService.getMetaData(directory.nativeURL);
                     if (new Date(metaData.modificationTime).getMilliseconds() <= yesterday) {
-                        await new Promise((resolve) => {
-                            if(directory.remove){
-                                directory.remove(() => {
+                        await new Promise<void>(async (resolve) => {
+                            if (directory.remove) {
+                                try {
+                                    await directory.remove();
                                     resolve();
-                                }, () => {
+                                } catch (error) {
+                                    console.error('Error removing directory:', error);
                                     resolve();
-                                });
+                                }
                             }
                         });
                     }
                 }
             }
         }
-        response.body = exportContext;
-        return Promise.resolve(response);
+        return response;
     }
 }

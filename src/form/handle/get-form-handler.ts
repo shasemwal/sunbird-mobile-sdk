@@ -5,6 +5,7 @@ import {CachedItemRequestSourceFrom, CachedItemStore} from '../../key-value-stor
 import {FileService} from '../../util/file/def/file-service';
 import {Path} from '../../util/file/util/path';
 import {map} from 'rxjs/operators';
+import { throwError as rxjsThrowError } from 'rxjs';
 
 export class GetFormHandler implements ApiRequestHandler<FormRequest, { [key: string]: {} }> {
     private readonly FORM_FILE_KEY_PREFIX = 'form-';
@@ -68,12 +69,20 @@ export class GetFormHandler implements ApiRequestHandler<FormRequest, { [key: st
     private fetchFromFile(request: FormRequest): Observable<{ [key: string]: {} }> {
         const dir = Path.getAssetPath() + this.formServiceConfig.formConfigDirPath;
         const file = this.FORM_FILE_KEY_PREFIX + GetFormHandler.getIdForRequest(request) + '.json';
-
-        return from(this.fileService.readFileFromAssets(dir.concat('/', file))).pipe(
-            map((filecontent: string) => {
-                const result = JSON.parse(filecontent);
-                return (result.result);
-            })
-        );
+        
+        try {
+            const filePath = dir.concat('/', file);
+            return from(this.fileService.readFileFromAssets(filePath).then(fileContent => {
+                const result = JSON.parse(fileContent);
+                return result.result;
+            }));
+        } catch (error) {
+            console.error('Error reading form file:', error);
+            return throwError(error);
+        }
     }
+}
+
+function throwError(error: unknown): Observable<{ [key: string]: {}; }> {
+    return rxjsThrowError(error);
 }

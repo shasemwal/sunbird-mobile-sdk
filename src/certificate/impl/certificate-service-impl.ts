@@ -64,7 +64,7 @@ export class CertificateServiceImpl implements CertificateService {
 
    downloadCertificate({ fileName, blob }: DownloadCertificateRequest): Observable<DownloadCertificateResponse> {
         return defer(async () => {
-            return this.fileService.writeFile(
+            return await this.fileService.writeFile(
               cordova.file.externalDataDirectory ,
                 fileName, blob as any,
                 {replace: true}
