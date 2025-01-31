@@ -21,8 +21,8 @@ export class ValidateDestinationContent {
         });
     }
 
-    private async getSubdirectoriesEntries(directoryPath: string): Promise<Entry[]> {
-        return this.fileService.listDir(directoryPath.replace(/\/$/, ''))
+    private async getSubdirectoriesEntries(directoryPath: string): Promise<any> {
+        return await this.fileService.listDir(directoryPath.replace(/\/$/, ''))
             .then(entries => entries
                 .filter(e => e.isDirectory)
             );

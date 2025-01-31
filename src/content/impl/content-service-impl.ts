@@ -289,9 +289,9 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
     exportContent(contentExportRequest: ContentExportRequest): Observable<ContentExportResponse> {
         const exportHandler = new ImportNExportHandler(this.deviceInfo, this.dbService, this.fileService);
         return from(exportHandler.getContentExportDBModelToExport(contentExportRequest.contentIds)
-            .then((contentsInDb: ContentEntry.SchemaMap[]) => {
-                return this.fileService.getTempLocation(contentExportRequest.destinationFolder)
-                    .then((tempLocationPath: DirectoryEntry) => {
+            .then(async (contentsInDb: ContentEntry.SchemaMap[]) => {
+                return await this.fileService.getTempLocation(contentExportRequest.destinationFolder)
+                    .then((tempLocationPath: any) => {
                         const metaData: { [key: string]: any } = {};
                         const fileName = ContentUtil.getExportedFileName(contentsInDb, this.appInfo.getAppName());
                         metaData['content_count'] = contentsInDb.length;
@@ -443,7 +443,7 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
     }
 
     importEcar(ecarImportRequest: EcarImportRequest): Observable<ContentImportResponse[]> {
-        return from(this.fileService.exists(ecarImportRequest.sourceFilePath).then((entry: Entry) => {
+        return from(this.fileService.exists(ecarImportRequest.sourceFilePath).then(async (entry: any) => {
             const importContentContext: ImportContentContext = {
                 isChildContent: ecarImportRequest.isChildContent,
                 ecarFilePath: ecarImportRequest.sourceFilePath,
@@ -456,67 +456,52 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
                 contentIdsToDelete: new Set(),
                 identifier: ecarImportRequest.identifier
             };
-            return new GenerateInteractTelemetry(this.telemetryService).execute(importContentContext, 'ContentImport-Initiated')
-                .then(() => {
-                    return this.fileService.getTempLocation(ecarImportRequest.destinationFolder);
-                }).then((tempLocation: DirectoryEntry) => {
-                    importContentContext.tmpLocation = tempLocation.nativeURL;
-                    return new ExtractEcar(this.fileService, this.zipService).execute(importContentContext);
-                }).then((importResponse: Response) => {
-                    return new ValidateEcar(this.fileService, this.dbService, this.appConfig,
-                        this.getContentDetailsHandler).execute(importResponse.body);
-                }).then((importResponse: Response) => {
-                    return new ExtractPayloads(this.fileService, this.zipService, this.appConfig,
-                        this.dbService, this.deviceInfo, this.getContentDetailsHandler, this.eventsBusService, this.sharedPreferences)
-                        .execute(importResponse.body);
-                }).then(([importResponse, ref]: [Response, NodeJS.Timeout]) => {
-                    this.contentUpdateSizeOnDeviceTimeoutRef.set(importContentContext.rootIdentifier ?
-                        importContentContext.rootIdentifier : importContentContext.identifiers![0], ref);
-                    this.eventsBusService.emit({
-                        namespace: EventNamespace.CONTENT,
-                        event: {
-                            type: ContentEventType.CONTENT_EXTRACT_COMPLETED,
-                            payload: {
-                                contentId: importContentContext.rootIdentifier ?
-                                    importContentContext.rootIdentifier : importContentContext.identifiers![0]
-                            }
-                        }
-                    });
-                    const response: Response = new Response();
-                    return new CreateContentImportManifest(this.dbService, this.deviceInfo, this.fileService).execute(importResponse.body);
-                    // }).then((importResponse: Response) => {
-                    //     return new CreateHierarchy(this.dbService, this.fileService).execute(importResponse.body);
-                }).then((importResponse: Response) => {
-                    return new EcarCleanup(this.fileService).execute(importResponse.body);
-                }).then((importResponse: Response) => {
-                    const response: Response = new Response();
-                    return this.cleanupContent(importContentContext).toPromise()
-                        .then(() => {
-                            response.body = importContentContext;
-                            return Promise.resolve(response);
-                        }).catch(() => {
-                            return Promise.reject(response);
-                        });
-                    // }).then((importResponse: Response) => {
-                    //     new UpdateSizeOnDevice(this.dbService, this.sharedPreferences).execute();
-                    //     return importResponse;
-                }).then((importResponse: Response) => {
-                    return new GenerateImportShareTelemetry(this.telemetryService).execute(importResponse.body);
-                }).then((importResponse: Response) => {
-                    return new GenerateInteractTelemetry(this.telemetryService).execute(importResponse.body, 'ContentImport-Success');
-                }).then((importResponse: Response<ImportContentContext>) => {
-                    this.eventsBusService.emit({
-                        namespace: EventNamespace.CONTENT,
-                        event: {
-                            type: ContentEventType.IMPORT_COMPLETED,
-                            payload: {
-                                contentId: importContentContext.rootIdentifier ?
-                                    importContentContext.rootIdentifier : importContentContext.identifiers![0]
-                            }
-                        }
-                    });
-                    return importResponse.body.contentImportResponseList;
-                });
+            await new GenerateInteractTelemetry(this.telemetryService).execute(importContentContext, 'ContentImport-Initiated');
+            const tempLocation = await this.fileService.getTempLocation(ecarImportRequest.destinationFolder);
+            importContentContext.tmpLocation = tempLocation.nativeURL;
+            const importResponse = await new ExtractEcar(this.fileService, this.zipService).execute(importContentContext);
+            const importResponse_1 = await new ValidateEcar(this.fileService, this.dbService, this.appConfig,
+                this.getContentDetailsHandler).execute(importResponse.body);
+            const [importResponse_2, ref] = await new ExtractPayloads(this.fileService, this.zipService, this.appConfig,
+                this.dbService, this.deviceInfo, this.getContentDetailsHandler, this.eventsBusService, this.sharedPreferences)
+                .execute(importResponse_1.body);
+            this.contentUpdateSizeOnDeviceTimeoutRef.set(importContentContext.rootIdentifier ?
+                importContentContext.rootIdentifier : importContentContext.identifiers![0], ref);
+            this.eventsBusService.emit({
+                namespace: EventNamespace.CONTENT,
+                event: {
+                    type: ContentEventType.CONTENT_EXTRACT_COMPLETED,
+                    payload: {
+                        contentId: importContentContext.rootIdentifier ?
+                            importContentContext.rootIdentifier : importContentContext.identifiers![0]
+                    }
+                }
+            });
+            const response: Response = new Response();
+            const importResponse_3 = await new CreateContentImportManifest(this.dbService, this.deviceInfo, this.fileService).execute(importResponse_2.body);
+            const importResponse_4 = await new EcarCleanup(this.fileService).execute(importResponse_3.body);
+            const response_1: Response = new Response();
+            let importResponse_5: Response;
+            try {
+                await this.cleanupContent(importContentContext).toPromise();
+                response_1.body = importContentContext;
+                importResponse_5 = await Promise.resolve(response_1);
+            } catch {
+                importResponse_5 = await Promise.reject(response_1);
+            }
+            const importResponse_6 = await new GenerateImportShareTelemetry(this.telemetryService).execute(importResponse_5.body);
+            const importResponse_7 = await new GenerateInteractTelemetry(this.telemetryService).execute(importResponse_6.body, 'ContentImport-Success');
+            this.eventsBusService.emit({
+                namespace: EventNamespace.CONTENT,
+                event: {
+                    type: ContentEventType.IMPORT_COMPLETED,
+                    payload: {
+                        contentId: importContentContext.rootIdentifier ?
+                            importContentContext.rootIdentifier : importContentContext.identifiers![0]
+                    }
+                }
+            });
+            return importResponse_7.body.contentImportResponseList;
         }).catch((error) => {
             console.log('error', error);
             return [{identifier: '', status: ContentImportStatus.NOT_FOUND}];
@@ -894,16 +879,16 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
         });
     }
 
-    createTranscriptDir(req, dataDirectory) {
-        return this.fileService.exists(dataDirectory.concat('/' + req.identifier)).then((entry: Entry) => {
+    async createTranscriptDir(req, dataDirectory) {
+        try {
+            const entry = await this.fileService.exists(dataDirectory.concat('/' + req.identifier));
             return entry.nativeURL;
-            }).catch(() => {
-                 return this.fileService.createDir(dataDirectory, false).then((directoryEntry: DirectoryEntry) => {
-                    this.fileService.createDir(dataDirectory.concat('/' + req.identifier), false).then((directory) => {
-                        return directory.nativeURL;
-                    });
-                });
+        } catch {
+            const directoryEntry = await this.fileService.createDir(dataDirectory, false);
+            await this.fileService.createDir(dataDirectory.concat('/' + req.identifier), false).then((directory) => {
+                return directory.nativeURL;
             });
+        }
     }
 
     downloadTranscript(downloadRequest) {
