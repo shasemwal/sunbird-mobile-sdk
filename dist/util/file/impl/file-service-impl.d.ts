@@ -11,7 +11,7 @@ export declare class FileServiceImpl implements FileService {
     private fileSystem;
     private initialized;
     init(): void;
-    readAsText(path: string, filePath: string, directory?: boolean): Promise<string>;
+    readAsText(path: string, filePath: string): Promise<string>;
     readAsBinaryString(fileData: string | Blob): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
     writeFile(path: string, fileName: string, text: string, options?: IWriteOptions): Promise<{
@@ -27,7 +27,7 @@ export declare class FileServiceImpl implements FileService {
      * @param {boolean} replace If true, replaces file with same name. If false returns error
      * @returns {Promise<FileEntry>} Returns a Promise that resolves to a FileEntry or rejects with an error.
      */
-    createFile(path: string, fileName: string, replace: boolean, directory?: boolean): Promise<{
+    createFile(path: string, fileName: string, replace: boolean): Promise<{
         success: boolean;
         uri: string;
     }>;
@@ -44,10 +44,10 @@ export declare class FileServiceImpl implements FileService {
      * @param {string} path  Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves to a RemoveResult or rejects with an error.
      */
-    removeFile(path: string, directory?: boolean): Promise<{
+    removeFile(path: string): Promise<{
         success: boolean;
     }>;
-    createDir(path: string, replace: boolean, directory?: boolean): Promise<{
+    createDir(path: string, replace: boolean): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
@@ -78,7 +78,7 @@ export declare class FileServiceImpl implements FileService {
      * @param {string} path Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves with a RemoveResult or rejects with an error.
      */
-    removeRecursively(path: string, directory?: boolean): Promise<{
+    removeRecursively(path: string): Promise<{
         success: boolean;
     }>;
     /**
@@ -90,30 +90,22 @@ export declare class FileServiceImpl implements FileService {
      * @param {string} newDirName New name of directory to copy to (leave blank to remain the same)
      * @returns {Promise<Entry>} Returns a Promise that resolves to the new Entry object or rejects with an error.
      */
-    copyDir(path: string, dirName: string, newPath: string, newDirName: string, directory?: boolean): Promise<{
+    copyDir(path: string, dirName: string, newPath: string, newDirName: string): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
         fullPath: string;
         nativeURL: string;
     }>;
-    /**
-     * Copy a file in various methods. If file exists, will fail to copy.
-     *
-     * @param {string} path Base FileSystem. Please refer to the iOS and Android filesystem above
-     * @param {string} fileName Name of file to copy
-     * @param {string} newPath Base FileSystem of new location
-     * @param {string} newFileName New name of file to copy to (leave blank to remain the same)
-     * @returns {Promise<Entry>} Returns a Promise that resolves to an Entry or rejects with an error.
-     */
-    copyFile(path: string, fileName: string, newPath: string, newFileName: string, directory?: boolean): Promise<{
+    copyFile(path: string, fileName: string, newPath: string, newFileName: string): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
         fullPath: string;
         nativeURL: string;
     }>;
-    exists(path: string, directory?: boolean): Promise<{
+    private copyEntry;
+    exists(path: string): Promise<{
         exists: boolean;
         nativeURL?: string;
     }>;
@@ -127,8 +119,6 @@ export declare class FileServiceImpl implements FileService {
      * @param fileUrl {string} file system url
      * @returns {Promise<Entry>}
      */
-    getMetaData(path: string | Entry, directory?: boolean): Promise<Metadata>;
-    getExternalApplicationStorageDirectory(): Promise<string>;
-    getDirectorySize(path: string, directory?: boolean): Promise<number>;
-    size(entry: Entry): Promise<number>;
+    getMetaData(path: string | Entry): Promise<Metadata>;
+    getDirectorySize(path: string): Promise<number>;
 }

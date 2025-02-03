@@ -25,7 +25,7 @@ export class ValidateDestinationContent {
         return await this.fileService.listDir(directoryPath.replace(/\/$/, ''))
             .then(entries => entries
                 .filter(e => e.isDirectory)
-            );
+            ).catch(() => { throw new Error('Error listing directory') });
     }
 
     private async extractValidContentIdsInDestination(entries: Entry[]) {
@@ -61,7 +61,7 @@ export class ValidateDestinationContent {
 
     private async extractManifest(directoryEntry: Entry): Promise<Manifest> {
         const manifestStringified = await this.fileService.readAsText(
-            directoryEntry.nativeURL, FileName.MANIFEST.valueOf(), false);
+            directoryEntry.nativeURL, FileName.MANIFEST.valueOf(), false).catch(() => { throw new Error('Manifest file not found') });
         return JSON.parse(manifestStringified);
     }
     // TODO: Swayangjit

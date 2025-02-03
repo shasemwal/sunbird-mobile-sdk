@@ -1,6 +1,6 @@
-import {TransferContentContext} from '../transfer-content-handler';
-import {FileService} from '../../../util/file/def/file-service';
-import {defer, Observable} from 'rxjs';
+import { TransferContentContext } from '../transfer-content-handler';
+import { FileService } from '../../../util/file/def/file-service';
+import { defer, Observable } from 'rxjs';
 
 export class ValidateDestinationFolder {
     constructor(private fileService: FileService) {
@@ -34,7 +34,7 @@ export class ValidateDestinationFolder {
             }
             return entry.nativeURL;
         } catch {
-            const directoryEntry = await this.fileService.createDir(directory, false);
+            const directoryEntry = await this.fileService.createDir(directory, false).catch((e) => { throw new Error(e); });
             return directoryEntry.nativeURL;
         }
     }

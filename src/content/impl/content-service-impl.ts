@@ -333,7 +333,7 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
                             );
                     }).then((exportResponse: Response<ContentExportResponse>) => {
                         return exportResponse.body;
-                    });
+                    }).catch((e) => { throw new Error(e); });
             }));
     }
 
@@ -459,7 +459,7 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
                 identifier: ecarImportRequest.identifier
             };
             await new GenerateInteractTelemetry(this.telemetryService).execute(importContentContext, 'ContentImport-Initiated');
-            const tempLocation = await this.fileService.getTempLocation(ecarImportRequest.destinationFolder);
+            const tempLocation = await this.fileService.getTempLocation(ecarImportRequest.destinationFolder)
             importContentContext.tmpLocation = tempLocation.nativeURL;
             const importResponse = await new ExtractEcar(this.fileService, this.zipService).execute(importContentContext);
             const importResponse_1 = await new ValidateEcar(this.fileService, this.dbService, this.appConfig,
@@ -885,10 +885,10 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
             const entry = await this.fileService.exists(dataDirectory.concat('/' + req.identifier, false));
             return entry.nativeURL;
         } catch {
-            const directoryEntry = await this.fileService.createDir(dataDirectory, false, false);
+            const directoryEntry = await this.fileService.createDir(dataDirectory, false, false).catch(() => { throw new Error('Error creating directory'); });
             await this.fileService.createDir(dataDirectory.concat('/' + req.identifier), false, false).then((directory) => {
                 return directory.nativeURL;
-            });
+            }).catch(() => { throw new Error('Error creating directory'); });
         }
     }
 

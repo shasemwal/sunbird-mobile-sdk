@@ -49,7 +49,7 @@ export class TelemetryExportDelegate implements ArchiveExportDelegate {
                     task: 'INITIALIZING'
                 });
 
-                await this.createWorkspace();
+                await this.createWorkspace().catch((e) => { throw new Error(e); });
 
                 const messageIds = await this.getMessageIds();
 
@@ -152,7 +152,7 @@ export class TelemetryExportDelegate implements ArchiveExportDelegate {
             {
                 replace: true
             }
-        );
+    ).catch((e) => { throw new Error(e); });
 
         return {
             size: [NetworkQueueEntry.COLUMN_NAME_DATA].length,

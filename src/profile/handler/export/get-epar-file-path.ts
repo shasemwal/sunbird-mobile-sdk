@@ -12,11 +12,11 @@ export class GetEparFilePath {
         const fileName = `profiles_${dayjs().format('YYYYMMDDhhmmss')}.epar`;
         return await this.fileService.createDir(exportContext.destinationFolder!.concat('Profile'), false)
             .then(async (directoryEntry: any) => {
-                return await this.fileService.createFile(directoryEntry.nativeURL, fileName, true, false);
+                return await this.fileService.createFile(directoryEntry.nativeURL, fileName, true, false).catch((e) => { throw new Error(e); });
             }).then((fileEntry: any) => {
                 exportContext.destinationDBFilePath = fileEntry.nativeURL;
                 response.body = exportContext;
                 return response;
-            });
+            }).catch((e) => { throw new Error(e); });;
     }
 }

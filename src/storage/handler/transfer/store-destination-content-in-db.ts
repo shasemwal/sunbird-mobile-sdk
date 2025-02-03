@@ -84,6 +84,7 @@ export class StoreDestinationContentInDb {
             return await this.extractContentFromItem(items, destinationPath.concat('/'), manifest['ver'], keepLowerVersion);
         } catch (e) {
             console.error(e);
+            throw new Error('Error while reading manifest file');
         }
     }
 

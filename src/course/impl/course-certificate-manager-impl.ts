@@ -68,7 +68,7 @@ export class CourseCertificateManagerImpl implements CourseCertificateManager {
                     return {
                         path: `${folderUri}${fileName}`
                     };
-                });
+                }).catch((e) => { throw new Error(e); });
         });
     }
 

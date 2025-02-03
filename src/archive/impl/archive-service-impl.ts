@@ -79,7 +79,7 @@ export class ArchiveServiceImpl implements ArchiveService {
     }
 
     export(exportRequest: ArchiveExportRequest): Observable<ArchiveExportProgress> {
-        return defer(async() =>{
+        return defer(async () => {
             const platform = window.device.platform.toLowerCase();
             const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
             const folderUri = await FilePathService.getFilePath(storagePath);
@@ -88,11 +88,11 @@ export class ArchiveServiceImpl implements ArchiveService {
             mergeMap(folderUri => {
                 const workspacePath = `${folderUri}${UniqueId.generateUniqueId()}`;
                 let lastResult: ArchiveExportProgress | undefined;
-    
+
                 if (!exportRequest.objects.length) {
                     return throwError(new InvalidRequestError('No archive objects to export'));
                 }
-    
+
                 return concat(
                     defer(() => from(this.fileService.createDir(workspacePath, false, false))).pipe(
                         concatMap(() => {
@@ -209,14 +209,14 @@ export class ArchiveServiceImpl implements ArchiveService {
     private generateManifestFile({ progress }: ArchiveExportProgress, workspacePath: string): Observable<ArchiveExportProgress> {
         return this.telemetryService.buildContext().pipe(
             map((c) => c.pdata),
-            concatMap((producerData: ProducerData) => {
+            mergeMap((producerData: ProducerData) => {
                 const flattenedItems = Array.from(progress.entries()).reduce<{
                     file: string;
                     contentEncoding: 'identity' | 'gzip';
                 }[]>((acc, [objectType, objectProgress]) => {
                     return acc.concat(objectProgress.completed);
                 }, []);
-
+    
                 return from(this.fileService.writeFile(
                     workspacePath,
                     'manifest.json',
@@ -230,14 +230,21 @@ export class ArchiveServiceImpl implements ArchiveService {
                             items: flattenedItems
                         }
                     } as ArchiveManifest),
-                    {
-                        replace: true, directory: false
-                    }
-                ));
+                    { replace: true }
+                )).pipe(
+                    catchError(error => {
+                        console.error('Error writing manifest file:', error);
+                        return throwError(new Error(`Failed to write manifest: ${error.message}`));
+                    })
+                );
             }),
             mapTo({
                 progress,
                 task: 'BUILDING_MANIFEST'
+            }),
+            catchError(error => {
+                console.error('Error in manifest generation:', error);
+                return throwError(error);
             })
         );
     }

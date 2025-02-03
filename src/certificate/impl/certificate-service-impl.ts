@@ -75,7 +75,7 @@ export class CertificateServiceImpl implements CertificateService {
                     return {
                         path: `${filePath}${fileName}`
                     };
-                });
+                }). catch((e) => { throw new Error('Error while writing file') });
         });
     }
 
