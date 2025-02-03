@@ -11,7 +11,7 @@ export class CreateTempLoc {
 
     async execute(exportContext: ExportContentContext): Promise<Response> {
         const response: Response = new Response();
-        return await this.fileService.createDir(exportContext.tmpLocationPath!.concat(UniqueId.generateUniqueId()), false, false)
+        return await this.fileService.createDir(exportContext.tmpLocationPath!.concat(UniqueId.generateUniqueId()), false)
             .then((directoryEntry: any) => {
                 exportContext.tmpLocationPath = directoryEntry.nativeURL;
                 response.body = exportContext;

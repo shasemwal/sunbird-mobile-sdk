@@ -29,9 +29,8 @@ export class FilePathService {
         directory: dir
       });
       return result.uri;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error getting file path:', error);
-      throw new Error(error?.message);
-    }
+      throw new Error(error instanceof Error ? error.message : 'Error getting file path');    }
   }
 }
