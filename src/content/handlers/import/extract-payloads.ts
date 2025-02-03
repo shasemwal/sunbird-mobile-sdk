@@ -267,7 +267,7 @@ export class ExtractPayloads {
                 await this.fileService.copyFile(importContext.tmpLocation!,
                     FileName.MANIFEST.valueOf(),
                     rootContentPath,
-                    FileName.MANIFEST.valueOf(), false);
+                    FileName.MANIFEST.valueOf());
             } catch (e) {
                 console.log("Exception Raised During Import")
                 throw e;
@@ -291,7 +291,7 @@ export class ExtractPayloads {
             const existingContentModel = result[identifier];
             if (ContentUtil.isNotUnit(mimeType, visibility)) {
                 try {
-                    sizeOnDevice = await this.fileService.getDirectorySize(payloadDestination!, false);
+                    sizeOnDevice = await this.fileService.getDirectorySize(payloadDestination!);
                     commonContentModelsMap.get(identifier).size_on_device = sizeOnDevice;
                     if (!existingContentModel) {
                         updateNewContentModels.push(commonContentModelsMap.get(identifier));
@@ -350,10 +350,10 @@ export class ExtractPayloads {
                 // * only in case of iOS ****
                 if (window.device.platform.toLowerCase() === "ios") {
                     // * checking if file exist, then delete the file
-                    await this.fileService.exists(payloadDestinationPath.concat('/', asset), false)
+                    await this.fileService.exists(payloadDestinationPath.concat('/', asset))
                         .then(async entry => {
                             if (entry) {
-                                await this.fileService.removeFile(payloadDestinationPath.concat('/', asset), false).then().catch(e => { throw e });
+                                await this.fileService.removeFile(payloadDestinationPath.concat('/', asset)).then().catch(e => { throw e });
                             }
                         })
                         .catch(error => {
@@ -363,7 +363,7 @@ export class ExtractPayloads {
                 }
                 // If source icon is not available then copy assets is failing and throwing exception.
                 await this.fileService.copyFile(tempLocationPath.concat(folderContainingFile), FileUtil.getFileName(asset),
-                    payloadDestinationPath.concat(folderContainingFile), FileUtil.getFileName(asset), false);
+                    payloadDestinationPath.concat(folderContainingFile), FileUtil.getFileName(asset));
             }
         } catch (e) {
             console.error('Cannot Copy Asset');

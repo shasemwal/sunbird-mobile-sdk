@@ -61,7 +61,7 @@ export class ValidateDestinationContent {
 
     private async extractManifest(directoryEntry: Entry): Promise<Manifest> {
         const manifestStringified = await this.fileService.readAsText(
-            directoryEntry.nativeURL, FileName.MANIFEST.valueOf(), false).catch(() => { throw new Error('Manifest file not found') });
+            directoryEntry.nativeURL, FileName.MANIFEST.valueOf()).catch(() => { throw new Error('Manifest file not found') });
         return JSON.parse(manifestStringified);
     }
     // TODO: Swayangjit

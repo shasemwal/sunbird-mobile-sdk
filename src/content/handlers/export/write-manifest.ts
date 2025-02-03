@@ -24,7 +24,7 @@ export class WriteManifest {
                 return await this.fileService.writeFile(exportContentContext.tmpLocationPath!,
                     FileName.MANIFEST.valueOf(),
                     JSON.stringify(exportContentContext.manifest),
-                    {replace: true, directory: false});
+                    {replace: true});
             }).then(() => {
                 response.body = exportContentContext;
                 return Promise.resolve(response);

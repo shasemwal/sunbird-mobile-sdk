@@ -33,12 +33,12 @@ export class CleanupExportedFile {
         }).then(() => {
             return this.keepAllFrameworknChannel();
         }).then(() => {
-            return this.fileService.getMetaData(exportContext.destinationDBFilePath!, false);
+            return this.fileService.getMetaData(exportContext.destinationDBFilePath!);
         }).then((metaData: Metadata) => {
             exportContext.size = metaData.size.toString();
             return this.populateMetaData({FILE_SIZE: metaData.size});
         }).then(() => {
-            return this.fileService.removeFile(exportContext.destinationDBFilePath!.concat('-journal'), false);
+            return this.fileService.removeFile(exportContext.destinationDBFilePath!.concat('-journal'));
         }).then(() => {
             response.body = exportContext;
             return response;

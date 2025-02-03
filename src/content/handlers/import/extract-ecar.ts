@@ -17,7 +17,7 @@ export class ExtractEcar {
         let size: number;
         return await this.fileService.getMetaData(importContext.ecarFilePath).then(async(metaData) => {
             size = metaData.size;
-            return await this.fileService.createDir(importContext.tmpLocation!.concat(UniqueId.generateUniqueId()), true, false).catch((e) => { throw new Error(e); });
+            return await this.fileService.createDir(importContext.tmpLocation!.concat(UniqueId.generateUniqueId()), true).catch((e) => { throw new Error(e); });
         }).then(async (directoryEntry) => {
             importContext.tmpLocation = directoryEntry.nativeURL;
             await new Promise((resolve, reject) => {

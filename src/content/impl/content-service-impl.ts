@@ -885,8 +885,8 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
             const entry = await this.fileService.exists(dataDirectory.concat('/' + req.identifier, false));
             return entry.nativeURL;
         } catch {
-            const directoryEntry = await this.fileService.createDir(dataDirectory, false, false).catch(() => { throw new Error('Error creating directory'); });
-            await this.fileService.createDir(dataDirectory.concat('/' + req.identifier), false, false).then((directory) => {
+            const directoryEntry = await this.fileService.createDir(dataDirectory, false).catch(() => { throw new Error('Error creating directory'); });
+            await this.fileService.createDir(dataDirectory.concat('/' + req.identifier), false).then((directory) => {
                 return directory.nativeURL;
             }).catch(() => { throw new Error('Error creating directory'); });
         }

@@ -94,7 +94,7 @@ export class ArchiveServiceImpl implements ArchiveService {
                 }
 
                 return concat(
-                    defer(() => from(this.fileService.createDir(workspacePath, false, false))).pipe(
+                    defer(() => from(this.fileService.createDir(workspacePath, false))).pipe(
                         concatMap(() => {
                             return combineLatest(
                                 exportRequest.objects.map<Observable<{ type: ArchiveObjectType, progress: ArchiveObjectExportProgress }>>(object => {
@@ -380,7 +380,7 @@ export class ArchiveServiceImpl implements ArchiveService {
         workspacePath: string,
         objectTypes: ArchiveObjectType[]
     ): Observable<ArchiveImportProgress> {
-        return from(this.fileService.readAsText(workspacePath, 'manifest.json', false)).pipe(
+        return from(this.fileService.readAsText(workspacePath, 'manifest.json')).pipe(
             map((content) => {
                 try {
                     return JSON.parse(content);

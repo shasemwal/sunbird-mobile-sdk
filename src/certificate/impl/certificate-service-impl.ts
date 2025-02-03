@@ -69,7 +69,7 @@ export class CertificateServiceImpl implements CertificateService {
             return await this.fileService.writeFile(
                 filePath,
                 fileName, blob as any,
-                { replace: true, directory: false }
+                { replace: true }
             ).
                 then(() => {
                     return {
