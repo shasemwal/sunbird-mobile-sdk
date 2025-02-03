@@ -34,7 +34,6 @@
     "cordova-plugin-advanced-http": "^2.0.2",
     "cordova-plugin-android-downloadmanager": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-downloadmanager.git",
     "cordova-plugin-awesome-shared-preferences": "^0.1.0",
-    "cordova-plugin-file": "8.0.1",
     "cordova-plugin-inappbrowser": "5.0.0",
     "jjdltc-cordova-plugin-zip": "git+https://github.com/swayangjit/jjdltc-cordova-plugin-zip.git",
     "rxjs": ">=6",
