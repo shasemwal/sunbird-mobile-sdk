@@ -13,7 +13,7 @@ export class DeviceMemoryCheck {
     async execute(importContext: ImportContentContext): Promise<Response> {
         return await this.fileService.getFreeDiskSpace().then((size) => {
             this.freeDiskSpace = size;
-            return this.fileService.getMetaData(importContext.ecarFilePath);
+            return this.fileService.getMetaData(importContext.ecarFilePath, false);
         }).then((metaData) => {
             const bufferSize = this.calculateBufferSize(metaData.size);
             const response: Response = new Response();

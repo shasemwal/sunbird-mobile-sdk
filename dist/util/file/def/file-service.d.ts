@@ -1,17 +1,17 @@
 import { FileInfo } from '@capacitor/filesystem';
 import { DirectoryEntry, Flags, IWriteOptions, Metadata } from '../index';
 export interface FileService {
-    readAsText(path: string, file: string): Promise<string>;
+    readAsText(path: string, file: string, directory?: boolean): Promise<string>;
     readAsBinaryString(path: string, file: string): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
     writeFile(path: string, fileName: string, text: string, options: IWriteOptions): Promise<{
         success: boolean;
     }>;
-    createFile(path: string, fileName: string, replace: boolean): Promise<{
+    createFile(path: string, fileName: string, replace: boolean, directory?: boolean): Promise<{
         success: boolean;
         uri: string;
     }>;
-    removeFile(path: string): Promise<{
+    removeFile(path: string, directory?: boolean): Promise<{
         success: boolean;
     }>;
     getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{
@@ -21,7 +21,7 @@ export interface FileService {
         fullPath: string;
         nativeURL: string;
     }>;
-    createDir(path: string, replace: boolean): Promise<{
+    createDir(path: string, replace: boolean, directory?: boolean): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
@@ -40,25 +40,25 @@ export interface FileService {
     removeDir(path: string, dirName: string): Promise<{
         success: boolean;
     }>;
-    removeRecursively(path: string): Promise<{
+    removeRecursively(path: string, directory?: boolean): Promise<{
         success: boolean;
     }>;
-    copyDir(path: string, dirName: string, newPath: string, newDirName: string): Promise<{
+    copyDir(path: string, dirName: string, newPath: string, newDirName: string, directory?: boolean): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
         fullPath: string;
         nativeURL: string;
     }>;
-    copyFile(path: string, fileName: string, newPath: string, newFileName: string): Promise<{
+    copyFile(path: string, fileName: string, newPath: string, newFileName: string, directory?: boolean): Promise<{
         isFile: boolean;
         isDirectory: boolean;
         name: string;
         fullPath: string;
         nativeURL: string;
     }>;
-    getMetaData(path: string): Promise<Metadata>;
-    exists(path: string): Promise<{
+    getMetaData(path: string, directory?: boolean): Promise<Metadata>;
+    exists(path: string, directory?: boolean): Promise<{
         exists: boolean;
         nativeURL?: string;
     }>;
@@ -67,5 +67,5 @@ export interface FileService {
         nativeURL: string;
     }>;
     getFreeDiskSpace(): Promise<number>;
-    getDirectorySize(path: string): Promise<number>;
+    getDirectorySize(path: string, directory?: boolean): Promise<number>;
 }

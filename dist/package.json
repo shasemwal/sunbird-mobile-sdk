@@ -16,7 +16,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@capacitor/filesystem": "5.2.2",
     "ajv": "8.12.0",
     "crypto-js": "4.2.0",
     "dayjs": "^1.9.8",
@@ -41,7 +40,8 @@
     "rxjs": ">=6",
     "sb-cordova-plugin-customtabs": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-customtabs.git",
     "sb-cordova-plugin-db": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-db.git",
-    "sb-cordova-plugin-utility": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-utility/tree/release-6.0.0"
+    "sb-cordova-plugin-utility": "git+https://github.com/Sunbird-Ed/sb-cordova-plugin-utility/tree/release-6.0.0",
+    "@capacitor/filesystem": "5.2.2"
   },
   "devDependencies": {
     "@project-sunbird/client-services": "7.0.6",

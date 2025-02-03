@@ -61,7 +61,7 @@ export class ValidateDestinationContent {
 
     private async extractManifest(directoryEntry: Entry): Promise<Manifest> {
         const manifestStringified = await this.fileService.readAsText(
-            directoryEntry.nativeURL, FileName.MANIFEST.valueOf());
+            directoryEntry.nativeURL, FileName.MANIFEST.valueOf(), false);
         return JSON.parse(manifestStringified);
     }
     // TODO: Swayangjit

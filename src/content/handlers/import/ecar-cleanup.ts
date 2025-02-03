@@ -9,7 +9,7 @@ export class EcarCleanup {
 
     async execute(importContentContext: ImportContentContext): Promise<Response> {
         const response: Response = new Response();
-        return await this.fileService.removeRecursively(importContentContext.tmpLocation!)
+        return await this.fileService.removeRecursively(importContentContext.tmpLocation!, false)
             .then(() => {
                 response.body = importContentContext;
                 return Promise.resolve(response);

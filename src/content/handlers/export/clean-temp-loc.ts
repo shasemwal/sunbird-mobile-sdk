@@ -17,7 +17,7 @@ export class CleanTempLoc {
         if (directoryList && directoryList.length > 0) {
             for (const directory of directoryList) {
                 if (FileUtil.getFileExtension(directory.nativeURL) === FileExtension.CONTENT) {
-                    const metaData: Metadata = await this.fileService.getMetaData(directory.nativeURL);
+                    const metaData: Metadata = await this.fileService.getMetaData(directory.nativeURL, false);
                     if (new Date(metaData.modificationTime).getMilliseconds() <= yesterday) {
                         await new Promise<void>(async (resolve) => {
                             if (directory.remove) {

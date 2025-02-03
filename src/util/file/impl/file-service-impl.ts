@@ -9,6 +9,8 @@ import {
 } from '../index';
 import { Filesystem, Directory, Encoding, FileInfo } from '@capacitor/filesystem';
 import { Plugins } from '@capacitor/core';
+import { FilePaths } from '../../../services/file-path/file-path.enum';
+import { FilePathService } from '../../../services/file-path/file-path.service';
 
 const { DiskSpacePlugin } = Plugins;
 
@@ -29,13 +31,13 @@ export class FileServiceImpl implements FileService {
         this.initialized = true;
     }
 
-    async readAsText(path: string, filePath: string): Promise<string> {
+    async readAsText(path: string, filePath: string, directory: boolean = true): Promise<string> {
         const result = await Filesystem.readFile({
             path: `${path}/${filePath}`,
-            directory: Directory.Documents,
+            ...(directory && { directory: Directory.Documents }),
             encoding: Encoding.UTF8
         });
-    
+
         let blobData: Blob;
         if (typeof result.data === 'string') {
             blobData = new Blob([result.data], { type: 'text/plain' });
@@ -44,7 +46,7 @@ export class FileServiceImpl implements FileService {
         } else {
             throw new Error('Expected a string or Blob');
         }
-    
+
         return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -55,7 +57,7 @@ export class FileServiceImpl implements FileService {
 
     async readAsBinaryString(fileData: string | Blob): Promise<string> {
         let blobData: Blob;
-        
+
         if (typeof fileData === 'string') {
             blobData = new Blob([fileData], { type: 'text/plain' });
         } else if (fileData instanceof Blob) {
@@ -63,7 +65,7 @@ export class FileServiceImpl implements FileService {
         } else {
             throw new Error('Expected a string or Blob');
         }
-    
+
         return new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result as string);
@@ -93,14 +95,18 @@ export class FileServiceImpl implements FileService {
         options: IWriteOptions = {}
     ): Promise<{ success: boolean }> {
         try {
+            const { directory = true, replace = false } = options;
             const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
+
             await Filesystem.writeFile({
                 path: fullPath,
                 data: text,
-                directory: Directory.Documents,
+                ...(directory && { directory: Directory.Documents }),
                 encoding: Encoding.UTF8,
-                recursive: true
+                recursive: true,
+                ...(replace && { replace: true })
             });
+
             return { success: true };
         } catch (error) {
             console.error('Error writing file:', error);
@@ -121,7 +127,8 @@ export class FileServiceImpl implements FileService {
     async createFile(
         path: string,
         fileName: string,
-        replace: boolean
+        replace: boolean,
+        directory: boolean = true
     ): Promise<{ success: boolean, uri: string }> {
         try {
             const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
@@ -130,7 +137,7 @@ export class FileServiceImpl implements FileService {
                 try {
                     const existing = await Filesystem.stat({
                         path: fullPath,
-                        directory: Directory.Documents
+                        ...(directory && { directory: Directory.Documents })
                     });
                     if (existing) {
                         throw new Error('File already exists');
@@ -143,7 +150,7 @@ export class FileServiceImpl implements FileService {
             await Filesystem.writeFile({
                 path: fullPath,
                 data: '',
-                directory: Directory.Documents,
+                ...(directory && { directory: Directory.Documents }),
                 encoding: Encoding.UTF8
             });
 
@@ -155,7 +162,7 @@ export class FileServiceImpl implements FileService {
     }
 
 
-    async getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {   //Method defined not used anywhere
+    async getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             const fullPath = `${directoryEntry.fullPath}/${fileName}`.replace(/\/\//g, '/');
             const fileInfo = await Filesystem.stat({
@@ -182,11 +189,11 @@ export class FileServiceImpl implements FileService {
      * @param {string} path  Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves to a RemoveResult or rejects with an error.
      */
-    async removeFile(path: string): Promise<{ success: boolean }> {
+    async removeFile(path: string, directory: boolean = true): Promise<{ success: boolean }> {
         try {
             await Filesystem.deleteFile({
                 path: path,
-                directory: Directory.Documents
+                ...(directory && { directory: Directory.Documents })
             });
             return { success: true };
         } catch (error) {
@@ -197,13 +204,13 @@ export class FileServiceImpl implements FileService {
 
 
 
-    async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
+    async createDir(path: string, replace: boolean, directory: boolean = true): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             if (!replace) {
                 try {
                     const existing = await Filesystem.stat({
                         path: path,
-                        directory: Directory.Documents
+                        ...directory && { directory: Directory.Documents },
                     });
                     if (existing) {
                         throw new Error('Directory already exists');
@@ -215,21 +222,20 @@ export class FileServiceImpl implements FileService {
 
             await Filesystem.mkdir({
                 path: path,
-                directory: Directory.Documents,
+                ...directory && { directory: Directory.Documents },
                 recursive: true
             });
 
-            const uriResult = await Filesystem.getUri({
-                path: path,
-                directory: Directory.Documents
-            });
+            const platform = window.device.platform.toLowerCase();
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const folderUri = await FilePathService.getFilePath(storagePath);
 
             return {
                 isFile: false,
                 isDirectory: true,
                 name: path.split('/').pop() || '',
                 fullPath: path,
-                nativeURL: uriResult.uri
+                nativeURL: folderUri
             };
         } catch (error) {
             console.error('Error creating directory:', error);
@@ -316,11 +322,11 @@ export class FileServiceImpl implements FileService {
      * @param {string} path Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves with a RemoveResult or rejects with an error.
      */
-    async removeRecursively(path: string): Promise<{ success: boolean }> {
+    async removeRecursively(path: string, directory: boolean = true): Promise<{ success: boolean }> {
         try {
             await Filesystem.rmdir({
                 path: path,
-                directory: Directory.Documents,
+                ...(directory && { directory: Directory.Documents }),
                 recursive: true
             });
             return { success: true };
@@ -343,22 +349,18 @@ export class FileServiceImpl implements FileService {
         path: string,
         dirName: string,
         newPath: string,
-        newDirName: string
+        newDirName: string,
+        directory: boolean = true
     ): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             const sourcePath = `${path}/${dirName}`.replace(/\/\//g, '/');
             const destPath = `${newPath}/${newDirName}`.replace(/\/\//g, '/');
 
-            await Filesystem.copy({
+            const folderPath = await Filesystem.copy({
                 from: sourcePath,
                 to: destPath,
-                directory: Directory.Documents,
+                ...(directory && { directory: Directory.Documents }),
                 toDirectory: Directory.Documents
-            });
-
-            const uriResult = await Filesystem.getUri({
-                path: destPath,
-                directory: Directory.Documents
             });
 
             return {
@@ -366,7 +368,7 @@ export class FileServiceImpl implements FileService {
                 isDirectory: true,
                 name: newDirName,
                 fullPath: destPath,
-                nativeURL: uriResult.uri
+                nativeURL: folderPath.uri
             };
         } catch (error) {
             console.error('Error copying directory:', error);
@@ -387,22 +389,18 @@ export class FileServiceImpl implements FileService {
         path: string,
         fileName: string,
         newPath: string,
-        newFileName: string
+        newFileName: string,
+        directory: boolean = true
     ): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             const sourcePath = `${path}/${fileName}`.replace(/\/\//g, '/');
             const destPath = `${newPath}/${newFileName}`.replace(/\/\//g, '/');
 
-            await Filesystem.copy({
+            const uriResult = await Filesystem.copy({
                 from: sourcePath,
                 to: destPath,
-                directory: Directory.Documents,
+                ...(directory && { directory: Directory.Documents }),
                 toDirectory: Directory.Documents
-            });
-
-            const uriResult = await Filesystem.getUri({
-                path: destPath,
-                directory: Directory.Documents
             });
 
             return {
@@ -418,22 +416,16 @@ export class FileServiceImpl implements FileService {
         }
     }
 
-
-    async exists(path: string): Promise<{ exists: boolean, nativeURL?: string }> {
+    async exists(path: string, directory: boolean = true): Promise<{ exists: boolean, nativeURL?: string }> {
         try {
-            await Filesystem.stat({
+            const folderPath = await Filesystem.stat({
                 path: path,
-                directory: Directory.Documents
-            });
-
-            const uriResult = await Filesystem.getUri({
-                path: path,
-                directory: Directory.Documents
+                ...directory && { directory: Directory.Documents }
             });
 
             return {
                 exists: true,
-                nativeURL: uriResult.uri
+                nativeURL: folderPath.uri
             };
         } catch (error) {
             return {
@@ -476,7 +468,7 @@ export class FileServiceImpl implements FileService {
      * @returns {Promise<Entry>}
      */
 
-    async getMetaData(path: string | Entry): Promise<Metadata> {
+    async getMetaData(path: string | Entry, directory: boolean = true): Promise<Metadata> {
         let filePath: string;
 
         if (typeof path === 'string') {
@@ -488,7 +480,7 @@ export class FileServiceImpl implements FileService {
         try {
             const stat = await Filesystem.stat({
                 path: filePath,
-                directory: Directory.Documents
+                ...(directory && { directory: Directory.Documents })
             });
 
             return {
@@ -510,19 +502,19 @@ export class FileServiceImpl implements FileService {
         return path.uri;
     }
 
-    async getDirectorySize(path: string): Promise<number> {
+    async getDirectorySize(path: string, directory: boolean = true): Promise<number> {
         let totalSize = 0;
 
         try {
             const result = await Filesystem.readdir({
                 path: path,
-                directory: Directory.Documents
+                ...(directory && { directory: Directory.Documents })
             });
 
             for (const file of result.files) {
                 const fileStat = await Filesystem.stat({
                     path: `${path}/${file}`,
-                    directory: Directory.Documents
+                    ...(directory && { directory: Directory.Documents })
                 });
                 totalSize += fileStat.size;
             }

@@ -267,5 +267,6 @@ export interface IWriteOptions {
     replace?: boolean;
     append?: boolean;
     truncate?: number;
+    directory?: boolean;
 }
 export {};

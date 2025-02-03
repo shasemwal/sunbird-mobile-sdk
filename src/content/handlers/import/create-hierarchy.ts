@@ -18,7 +18,7 @@ export class CreateHierarchy {
     }
 
     public async execute(importContentContext: ImportContentContext): Promise<Response> {
-        const data = await this.fileService.readAsText(importContentContext.tmpLocation!, FileName.MANIFEST.valueOf());
+        const data = await this.fileService.readAsText(importContentContext.tmpLocation!, FileName.MANIFEST.valueOf(), false);
         const manifestJson = JSON.parse(data);
         const archive = manifestJson.archive;
         const items = archive.items;
