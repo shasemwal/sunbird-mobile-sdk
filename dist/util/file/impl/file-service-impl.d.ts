@@ -54,6 +54,7 @@ export declare class FileServiceImpl implements FileService {
         fullPath: string;
         nativeURL: string;
     }>;
+    private checkFileExists;
     /**
      * List files and directory from a given path.
      *
