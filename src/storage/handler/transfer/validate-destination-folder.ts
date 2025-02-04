@@ -8,8 +8,8 @@ export class ValidateDestinationFolder {
 
     execute(context: TransferContentContext): Observable<TransferContentContext> {
         return defer(async () => {
-            context.destinationFolder = await this.validate(context.destinationFolder!).then((destination: string) => {
-                return this.createDirectory(destination);
+            context.destinationFolder = await this.validate(context.destinationFolder!).then(async (destination: string) => {
+                return await this.createDirectory(destination);
             });
             return context;
         });

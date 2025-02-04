@@ -81,7 +81,7 @@ export class ArchiveServiceImpl implements ArchiveService {
     export(exportRequest: ArchiveExportRequest): Observable<ArchiveExportProgress> {
         return defer(async () => {
             const platform = window.device.platform.toLowerCase();
-            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.CACHE;
             const folderUri = await FilePathService.getFilePath(storagePath);
             return { folderUri };
         }).pipe(
@@ -179,7 +179,7 @@ export class ArchiveServiceImpl implements ArchiveService {
     private generateZipArchive(progress: ArchiveExportProgress, workspacePath: string): Observable<ArchiveExportProgress> {
         return defer(async () => {
             const platform = window.device.platform.toLowerCase();
-            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.CACHE;
             const folderPath = await FilePathService.getFilePath(storagePath);
             const zipFilePath = `${folderPath}/archive-${new Date().toISOString()}.zip`;
             return { zipFilePath };
@@ -254,7 +254,7 @@ export class ArchiveServiceImpl implements ArchiveService {
 
         return defer(async () => {
             const platform = window.device.platform.toLowerCase();
-            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.CACHE;
             const folderUri = await FilePathService.getFilePath(storagePath);
             const workspacePath = `${folderUri}${UniqueId.generateUniqueId()}`;
             return { workspacePath };

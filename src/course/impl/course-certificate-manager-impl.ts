@@ -58,7 +58,7 @@ export class CourseCertificateManagerImpl implements CourseCertificateManager {
 
     downloadCertificate({ fileName, blob }: DownloadCertificateRequest): Observable<DownloadCertificateResponse> {
         return defer(async () => {
-            const folderUri = await FilePathService.getFilePath(FilePaths.DATA);
+            const folderUri = await FilePathService.getFilePath(FilePaths.EXTERNAL);
             return await this.fileService.writeFile(
                 folderUri,
                 fileName, blob as any,

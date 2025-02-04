@@ -1,6 +1,8 @@
 export enum FilePaths {
     DOCUMENTS = "documents",
     CACHE = "cache",
-    ASSETS = "assets",
+    EXTERNAL_STORAGE = "external_storage",
+    LIBRARY = "library",
+    EXTERNAL = "external",
     DATA = "data"
   }

@@ -16,8 +16,14 @@ export class FilePathService {
       case FilePaths.DATA:
         dir = Directory.Data;
         break;
-      case FilePaths.ASSETS:
+      case FilePaths.EXTERNAL_STORAGE:
         dir = Directory.ExternalStorage;
+        break;
+      case FilePaths.EXTERNAL:
+        dir = Directory.External;
+        break;
+      case FilePaths.LIBRARY:
+        dir = Directory.Library;
         break;
       default:
         throw new Error('Unsupported directory');
@@ -31,6 +37,7 @@ export class FilePathService {
       return result.uri;
     } catch (error) {
       console.error('Error getting file path:', error);
-      throw new Error(error instanceof Error ? error.message : 'Error getting file path');    }
+      throw new Error(error instanceof Error ? error.message : 'Error getting file path');
+    }
   }
 }

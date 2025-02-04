@@ -65,7 +65,7 @@ export class CertificateServiceImpl implements CertificateService {
 
     downloadCertificate({ fileName, blob }: DownloadCertificateRequest): Observable<DownloadCertificateResponse> {
         return defer(async () => {
-            const filePath = await FilePathService.getFilePath(FilePaths.DATA);
+            const filePath = await FilePathService.getFilePath(FilePaths.EXTERNAL);
             return await this.fileService.writeFile(
                 filePath,
                 fileName, blob as any,
@@ -85,7 +85,7 @@ export class CertificateServiceImpl implements CertificateService {
             const userId = activeProfile.managedSession ? activeProfile.managedSession.uid : activeProfile.uid;
 
             const platform = window.device.platform.toLowerCase();
-            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.EXTERNAL_STORAGE;
             const folderPath = await FilePathService.getFilePath(storagePath);
             const filePath = `${folderPath}Download/${request.certificate.name}_${request.courseId}_${userId}.pdf`;
             return { userId };
