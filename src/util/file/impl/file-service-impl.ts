@@ -1,31 +1,18 @@
-import {injectable} from 'inversify';
-import {FileService} from '../def/file-service';
+import { injectable } from 'inversify';
+import { FileService } from '../def/file-service';
 import {
     DirectoryEntry,
-    DirectoryReader,
     Entry,
-    EntryCallback,
-    ErrorCallback,
-    FileEntry,
-    FileError,
-    FileSystem,
-    FileWriter,
     Flags,
     IWriteOptions,
-    LocalFileSystem,
     Metadata,
-    RemoveResult
 } from '../index';
-import {FileUtil} from '../util/file-util';
+import { Filesystem, Encoding, FileInfo } from '@capacitor/filesystem';
+import { Plugins } from '@capacitor/core';
+import { FilePaths } from '../../../services/file-path/file-path.enum';
+import { FilePathService } from '../../../services/file-path/file-path.service';
 
-declare var cordova: {
-    exec(
-        successCallback: () => void,
-        errorCallback: () => void,
-        service: string,
-        action: string,
-        arguments: string[])
-};
+const { DiskSpacePlugin } = Plugins;
 
 /**
  * Allows the user to look up the Entry for a file or directory referred to by a local URL.
@@ -34,25 +21,6 @@ declare var cordova: {
  * @param errorCallback A callback that is called when errors happen, or when the request to obtain the Entry is denied.
  */
 
-declare var resolveLocalFileSystemURL: (
-    url: string,
-    successCallback: EntryCallback,
-    errorCallback?: ErrorCallback
-) => void;
-
-declare var file: {
-    TEMPORARY: number;
-    PERSISTENT: number;
-    /* Android: the application space on external storage. */
-    externalApplicationStorageDirectory: string;
-
-    requestFileSystem(
-        type: LocalFileSystem,
-        size: number,
-        successCallback: (fileSystem: FileSystem) => void,
-        errorCallback?: (fileError: FileError) => void): void;
-};
-
 @injectable()
 export class FileServiceImpl implements FileService {
 
@@ -60,20 +28,54 @@ export class FileServiceImpl implements FileService {
     private initialized = false;
 
     init() {
-        file.requestFileSystem(LocalFileSystem.PERSISTENT, 0, (fs) => {
-            this.initialized = true;
-            this.fileSystem = fs;
-        }, () => {
+        this.initialized = true;
+    }
 
+    async readAsText(path: string, filePath: string): Promise<string> {
+        try {
+            const result = await Filesystem.readFile({
+                path: `${path}/${filePath}`,
+                encoding: Encoding.UTF8
+            });
+    
+            let blobData: Blob;
+            if (typeof result.data === 'string') {
+                blobData = new Blob([result.data], { type: 'text/plain' });
+            } else if (result.data instanceof Blob) {
+                blobData = result.data;
+            } else {
+                throw new Error('Expected a string or Blob');
+            }
+    
+            return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = () => reject(new Error('Failed to read Blob'));
+                reader.readAsText(blobData);
+            });
+        } catch (error) {
+            console.error('Error reading file as text:', error);
+            throw error;
+        }
+    }
+
+    async readAsBinaryString(fileData: string | Blob): Promise<string> {
+        let blobData: Blob;
+
+        if (typeof fileData === 'string') {
+            blobData = new Blob([fileData], { type: 'text/plain' });
+        } else if (fileData instanceof Blob) {
+            blobData = fileData;
+        } else {
+            throw new Error('Expected a string or Blob');
+        }
+
+        return new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('Failed to read Blob'));
+            reader.readAsBinaryString(blobData);
         });
-    }
-
-    readAsText(path: string, filePath: string): Promise<string> {
-        return this.readFile<string>(path, filePath, 'Text');
-    }
-
-    readAsBinaryString(path: string, filePath: string): Promise<string> {
-        return this.readFile<string>(path, filePath, 'BinaryString');
     }
 
     readFileFromAssets(fileName: string): Promise<string> {
@@ -90,24 +92,29 @@ export class FileServiceImpl implements FileService {
         });
     }
 
-    writeFile(
+    async writeFile(
         path: string,
         fileName: string,
         text: string,
         options: IWriteOptions = {}
-    ): Promise<any> {
-        const getFileOpts: Flags = {
-            create: !options.append,
-            exclusive: !options.replace
-        };
+    ): Promise<{ success: boolean }> {
+        try {
+            const { replace = false } = options;
+            const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
 
-        return this.resolveDirectoryUrl(path)
-            .then((directoryEntry: DirectoryEntry) => {
-                return this.getFile(directoryEntry, fileName, getFileOpts);
-            })
-            .then((fileEntry: FileEntry) => {
-                return this.writeFileEntry(fileEntry, text, options);
+            await Filesystem.writeFile({
+                path: fullPath,
+                data: text,
+                encoding: Encoding.UTF8,
+                recursive: true,
+                ...(replace && { replace: true })
             });
+
+            return { success: true };
+        } catch (error) {
+            console.error('Error writing file:', error);
+            throw error;
+        }
     }
 
     /**
@@ -120,42 +127,54 @@ export class FileServiceImpl implements FileService {
      * @param {boolean} replace If true, replaces file with same name. If false returns error
      * @returns {Promise<FileEntry>} Returns a Promise that resolves to a FileEntry or rejects with an error.
      */
-    createFile(
+    async createFile(
         path: string,
         fileName: string,
-        replace: boolean
-    ): Promise<FileEntry> {
-
-        const options: Flags = {
-            create: true
-        };
-
-        if (!replace) {
-            options.exclusive = true;
+        replace: boolean,
+    ): Promise<{ success: boolean, uri: string }> {
+        try {
+            const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
+            const fileExists = await this.checkFileExists(fullPath);
+    
+            if (fileExists && !replace) {
+                throw new Error('File already exists');
+            }
+    
+            await Filesystem.writeFile({
+                path: fullPath,
+                data: '',
+                encoding: Encoding.UTF8
+            });
+    
+            return {
+                success: true,
+                uri: fullPath
+            };
+        } catch (error) {
+            console.error('Error creating file:', error);
+            throw error;
         }
-
-        return this.resolveDirectoryUrl(path).then(fse => {
-            return this.getFile(fse, fileName, options);
-        });
     }
 
 
-    getFile(
-        directoryEntry: DirectoryEntry,
-        fileName: string,
-        flags: Flags
-    ): Promise<FileEntry> {
-        return new Promise<FileEntry>((resolve, reject) => {
-            try {
-                directoryEntry.getFile(fileName, flags, (entry: FileEntry) => {
-                    resolve(entry);
-                }, err => {
-                    reject(err);
-                });
-            } catch (xc) {
-                reject(xc);
-            }
-        });
+    async getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
+        try {
+            const fullPath = `${directoryEntry.fullPath}/${fileName}`.replace(/\/\//g, '/');
+            const fileInfo = await Filesystem.stat({
+                path: fullPath
+            });
+
+            return {
+                isFile: true,
+                isDirectory: false,
+                name: fileName,
+                fullPath: fullPath,
+                nativeURL: fileInfo.uri
+            };
+        } catch (error) {
+            console.error('Error getting file:', error);
+            throw error;
+        }
     }
 
     /**
@@ -164,40 +183,58 @@ export class FileServiceImpl implements FileService {
      * @param {string} path  Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves to a RemoveResult or rejects with an error.
      */
-    removeFile(path: string): Promise<RemoveResult> {
-        const parentDir = FileUtil.getParentDir(path);
-        const fileName = FileUtil.getFileName(path).replace('/', '');
-        return this.resolveDirectoryUrl(parentDir)
-            .then(fse => {
-                return this.getFile(fse, fileName, {create: false});
-            })
-            .then(fe => {
-                return this.remove(fe);
+    async removeFile(path: string): Promise<{ success: boolean }> {
+        try {
+            await Filesystem.deleteFile({
+                path: path
             });
+            return { success: true };
+        } catch (error) {
+            console.error('Error removing file:', error);
+            throw error;
+        }
     }
 
 
-    createDir(
-        path: string,
-        replace: boolean
-    ): Promise<DirectoryEntry> {
 
-        const options: Flags = {
-            create: true
-        };
-
-        if (!replace) {
-            options.exclusive = true;
-        }
-        const parentDir = FileUtil.getParentDir(path);
-        const dirName = FileUtil.getFileName(path).replace('/', '');
-        return this.exists(path).then(() => {
-            return this.resolveDirectoryUrl(path);
-        }).catch(() => {
-            return this.resolveDirectoryUrl(parentDir).then(fse => {
-                return this.getDirectory(fse, dirName, options);
+    async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
+        try {
+            const platform = window.device.platform.toLowerCase();
+            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const folderUri = await FilePathService.getFilePath(storagePath);
+            const dirExists = await this.checkFileExists(path);
+    
+            if (dirExists && !replace) {
+                throw new Error('Directory already exists');
+            }
+    
+            await Filesystem.mkdir({
+                path: path,
+                recursive: true
             });
-        });
+    
+            return {
+                isFile: false,
+                isDirectory: true,
+                name: path.split('/').pop() || '',
+                fullPath: path,
+                nativeURL: folderUri
+            };
+        } catch (error) {
+            console.error('Error creating directory:', error);
+            throw error;
+        }
+    }
+    
+    private async checkFileExists(path: string): Promise<boolean> {
+        try {
+            await Filesystem.stat({
+                path: path
+            });
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -206,30 +243,65 @@ export class FileServiceImpl implements FileService {
      * @param {string} directoryPath. Please refer to the iOS and Android filesystems above
      * @returns {Promise<Entry[]>} Returns a Promise that resolves to an array of Entry objects or rejects with an error.
      */
-    listDir(directoryPath: string): Promise<Entry[]> {
-
-        return this.resolveDirectoryUrl(FileUtil.getDirecory(directoryPath))
-            .then(fse => {
-                return this.getDirectory(fse, FileUtil.getFileName(directoryPath), {
-                    create: false,
-                    exclusive: false
-                });
-            })
-            .then(de => {
-                const reader = de.createReader();
-                return this.readEntries(reader);
+    async listDir(directoryPath: string): Promise<{ isFile: boolean; isDirectory: boolean; name: FileInfo; fullPath: string; filesystem: string; nativeURL: string; remove?: () => Promise<void>; }[]> {
+        try {
+            const result = await Filesystem.readdir({
+                path: directoryPath
             });
+
+            const entries = await Promise.all(result.files.map(async (file) => {
+                const fullPath = `${directoryPath}/${file}`.replace(/\/\//g, '/');
+
+                const platform = window.device.platform.toLowerCase();
+                const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+                const folderUri = await FilePathService.getFilePath(storagePath);
+
+                const stat = await Filesystem.stat({
+                    path: fullPath
+                });
+
+                return {
+                    isFile: stat.type === 'file',
+                    isDirectory: stat.type === 'directory',
+                    name: file,
+                    fullPath: fullPath,
+                    filesystem: 'default',
+                    nativeURL: folderUri,
+                    remove: async () => {
+                        if (stat.type === 'file') {
+                            await Filesystem.deleteFile({
+                                path: fullPath
+                            });
+                        } else {
+                            await Filesystem.rmdir({
+                                path: fullPath,
+                                recursive: true
+                            });
+                        }
+                    }
+                };
+            }));
+
+            return entries;
+        } catch (error) {
+            console.error('Error listing directory:', error);
+            throw error;
+        }
     }
 
 
-    removeDir(path: string, dirName: string): Promise<RemoveResult> {
-        return this.resolveDirectoryUrl(path)
-            .then(fse => {
-                return this.getDirectory(fse, dirName, {create: false});
-            })
-            .then(de => {
-                return this.remove(de);
+    async removeDir(path: string, dirName: string): Promise<{ success: boolean }> {
+        try {
+            const fullPath = `${path}/${dirName}`.replace(/\/\//g, '/');
+            await Filesystem.rmdir({
+                path: fullPath,
+                recursive: true
             });
+            return { success: true };
+        } catch (error) {
+            console.error('Error removing directory:', error);
+            throw error;
+        }
     }
 
     /**
@@ -238,17 +310,17 @@ export class FileServiceImpl implements FileService {
      * @param {string} path Base FileSystem. Please refer to the iOS and Android filesystem above
      * @returns {Promise<RemoveResult>} Returns a Promise that resolves with a RemoveResult or rejects with an error.
      */
-    removeRecursively(path: string): Promise<RemoveResult> {
-        path = path.endsWith('/') ? path.substring(0, path.length - 1) : path;
-        const parentDir = FileUtil.getParentDir(path);
-        const dirName = FileUtil.getFileName(path).replace('/', '');
-        return this.resolveDirectoryUrl(parentDir)
-            .then(fse => {
-                return this.getDirectory(fse, dirName, {create: false});
-            })
-            .then(de => {
-                return this.rimraf(de);
+    async removeRecursively(path: string): Promise<{ success: boolean }> {
+        try {
+            await Filesystem.rmdir({
+                path: path,
+                recursive: true
             });
+            return { success: true };
+        } catch (error) {
+            console.error('Error removing directory recursively:', error);
+            throw error;
+        }
     }
 
     /**
@@ -260,69 +332,78 @@ export class FileServiceImpl implements FileService {
      * @param {string} newDirName New name of directory to copy to (leave blank to remain the same)
      * @returns {Promise<Entry>} Returns a Promise that resolves to the new Entry object or rejects with an error.
      */
-    copyDir(
-        path: string,
-        dirName: string,
-        newPath: string,
-        newDirName: string
-    ): Promise<Entry> {
+    async copyDir(path: string, dirName: string, newPath: string, newDirName: string) {
+        const sourcePath = `${path}/${dirName}`;
+        const destPath = `${newPath}/${newDirName}`;
+        return await this.copyEntry(sourcePath, destPath, false);
+    }
 
-        return this.resolveDirectoryUrl(path)
-            .then(fse => {
-                return this.getDirectory(fse, dirName, {create: false});
-            })
-            .then(srcde => {
-                return this.resolveDirectoryUrl(newPath).then(deste => {
-                    return this.copy(srcde, deste, newDirName);
-                });
+    async copyFile(path: string, fileName: string, newPath: string, newFileName: string) {
+        const sourcePath = `${path}/${fileName}`;
+        const destPath = `${newPath}/${newFileName}`;
+        return await this.copyEntry(sourcePath, destPath, true);
+    }
+
+    private async copyEntry(sourcePath: string, destPath: string, isFile: boolean) {
+        try {
+            const result = await Filesystem.copy({
+                from: sourcePath.replace(/\/\//g, '/'),
+                to: destPath.replace(/\/\//g, '/')
             });
+
+            return {
+                isFile,
+                isDirectory: !isFile,
+                name: destPath.split('/').pop() || '',
+                fullPath: destPath,
+                nativeURL: result.uri
+            };
+        } catch (error) {
+            console.error(`Error copying ${isFile ? 'file' : 'directory'}:`, error);
+            throw error;
+        }
     }
 
-    /**
-     * Copy a file in various methods. If file exists, will fail to copy.
-     *
-     * @param {string} path Base FileSystem. Please refer to the iOS and Android filesystem above
-     * @param {string} fileName Name of file to copy
-     * @param {string} newPath Base FileSystem of new location
-     * @param {string} newFileName New name of file to copy to (leave blank to remain the same)
-     * @returns {Promise<Entry>} Returns a Promise that resolves to an Entry or rejects with an error.
-     */
-    copyFile(
-        path: string,
-        fileName: string,
-        newPath: string,
-        newFileName: string
-    ): Promise<Entry> {
-        newFileName = newFileName || fileName;
-
-        return this.resolveDirectoryUrl(path)
-            .then(fse => {
-                return this.getFile(fse, fileName, {create: false});
-            })
-            .then(srcfe => {
-                return this.resolveDirectoryUrl(newPath).then(deste => {
-                    return this.copy(srcfe, deste, newFileName);
-                });
+    async exists(path: string): Promise<{ exists: boolean, nativeURL?: string }> {
+        try {
+            const folderPath = await Filesystem.stat({
+                path: path
             });
+
+            return {
+                exists: true,
+                nativeURL: folderPath.uri
+            };
+        } catch (error) {
+            throw error
+        }
     }
 
-    exists(path: string): Promise<Entry> {
-        return this.resolveLocalFilesystemUrl(path);
+    async getTempLocation(destinationPath: string): Promise<{ path: string, nativeURL: string }> {
+        try {
+            const tempPath = `${destinationPath}/tmp`.replace(/\/\//g, '/');
+
+            const platform = window.device.platform.toLowerCase();
+            const filePathType = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+            const folderUri = await FilePathService.getFilePath(filePathType);
+
+            return {
+                path: tempPath,
+                nativeURL: folderUri
+            };
+        } catch (error) {
+            console.error('Error getting temp location:', error);
+            throw error;
+        }
     }
 
-    getTempLocation(destinationPath: string): Promise<DirectoryEntry> {
-        return this.resolveDirectoryUrl(destinationPath)
-            .then((directoryEntry: DirectoryEntry) => {
-                return this.resolveDirectoryUrl(destinationPath.concat('tmp'));
-            }).catch(() => {
-                return this.createDir(destinationPath.concat('tmp'), false);
+    async getFreeDiskSpace(): Promise<number> {
+        return DiskSpacePlugin.getFreeDiskSpace()
+            .then(result => result.freeSpace)
+            .catch(error => {
+                console.error('Error getting free disk space:', error);
+                throw error;
             });
-    }
-
-    getFreeDiskSpace(): Promise<number> {
-        return new Promise<any>((resolve, reject) => {
-            cordova.exec(resolve, reject, 'File', 'getFreeDiskSpace', []);
-        });
     }
 
     /**
@@ -330,276 +411,51 @@ export class FileServiceImpl implements FileService {
      * @param fileUrl {string} file system url
      * @returns {Promise<Entry>}
      */
-    resolveLocalFilesystemUrl(fileUrl: string): Promise<Entry> {
-        if (!fileUrl.includes('file://')) {
-            fileUrl = 'file://' + fileUrl;
-        }
-        console.log(fileUrl);
-        return new Promise<Entry>((resolve, reject) => {
-            try {
-                resolveLocalFileSystemURL(
-                    fileUrl,
-                    (entry: Entry) => {
-                        resolve(entry);
-                    },
-                    err => {
-                        reject(err);
-                    }
-                );
-            } catch (xc) {
-                reject(xc);
-            }
-        });
-    }
 
-    getMetaData(path: string | Entry): Promise<Metadata> {
+    async getMetaData(path: string | Entry): Promise<Metadata> {
+        let filePath: string;
+
         if (typeof path === 'string') {
-            return this.resolveLocalFilesystemUrl(path).then(entry => {
-                return this.getMetaData(entry);
-            });
-        }
-
-        const fileEntry = path;
-        return new Promise<Metadata>((resolve) => {
-            fileEntry.getMetadata(metadata => {
-                resolve(metadata);
-            }, () => resolve());
-        });
-    }
-
-    getExternalApplicationStorageDirectory(): string {
-        return file.externalApplicationStorageDirectory;
-    }
-
-    getDirectorySize(path: string): Promise<number> {
-        return this.resolveDirectoryUrl(path)
-            .then((directoryEntry: DirectoryEntry) => {
-                return this.size(directoryEntry);
-            }).catch(() => {
-                return 0;
-            });
-    }
-
-    size(entry: Entry): Promise<number> {
-        if (entry.isFile) {
-            return new Promise<number>((resolve, reject) => {
-                entry.getMetadata(f => resolve(f.size), error => reject(error));
-            });
-        } else if (entry.isDirectory) {
-            return new Promise<number>((resolve, reject) => {
-                const directoryReader = (entry as DirectoryEntry).createReader();
-                directoryReader.readEntries((entries: Entry[]) => {
-                        Promise.all(entries.map(e => this.size(e))).then((size: number[]) => {
-                            const dirSize = size.reduce((prev, current) => prev + current, 0);
-                            resolve(dirSize);
-                        }).catch(err => reject(err));
-                    },
-                    (error) => reject(error));
-            });
+            filePath = path;
         } else {
-            return Promise.resolve(0);
+            filePath = path.fullPath;
+        }
+
+        try {
+            const stat = await Filesystem.stat({
+                path: filePath
+            });
+
+            return {
+                modificationTime: new Date(stat.mtime),
+                size: stat.size
+            };
+        } catch (error) {
+            console.error('Error retrieving metadata:', error);
+            throw error;
         }
     }
 
-    private readEntries(dr: DirectoryReader): Promise<Entry[]> {
-        return new Promise<Entry[]>((resolve, reject) => {
-            dr.readEntries(
-                entries => {
-                    resolve(entries);
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
-    }
+    async getDirectorySize(path: string): Promise<number> {
+        let totalSize = 0;
 
-
-    // remove(path: string | Entry): Promise<Metadata> {
-    //     if (typeof path === 'string') {
-    //         return this.resolveLocalFilesystemUrl(path).then(entry => {
-    //             return this.remove(entry);
-    //         });
-    //     }
-    //
-    //     const fileEntry = path;
-    //     return new Promise<Metadata>((resolve) => {
-    //         fileEntry.remove(() => {
-    //             resolve();
-    //         }, () => resolve());
-    //     });
-    // }
-
-    private readFile<T>(
-        path: string,
-        filePath: string,
-        readAs: 'ArrayBuffer' | 'BinaryString' | 'DataURL' | 'Text'
-    ): Promise<T> {
-
-        return this.resolveDirectoryUrl(path)
-            .then((directoryEntry: DirectoryEntry) => {
-                return this.getFile(directoryEntry, filePath, {create: false});
-            })
-            .then((fileEntry: FileEntry) => {
-                const reader = new FileReader();
-                return new Promise<T>((resolve, reject) => {
-                    reader.onloadend = () => {
-                        if (reader.result !== undefined || reader.result !== null) {
-                            resolve((reader.result as any) as T);
-                        } else if (reader.error !== undefined || reader.error !== null) {
-                            reject(reader.error);
-                        } else {
-                            reject({code: null, message: 'READER_ONLOADEND_ERR'});
-                        }
-                    };
-
-                    fileEntry.file(
-                        entry => {
-                            reader[`readAs${readAs}`].call(reader, entry);
-                        },
-                        error => {
-                            reject(error);
-                        }
-                    );
-                });
-            }).catch(err => {
-                throw err;
+        try {
+            const result = await Filesystem.readdir({
+                path: path
             });
-    }
 
-    private resolveDirectoryUrl(directoryUrl: string): Promise<DirectoryEntry> {
-        return this.resolveLocalFilesystemUrl(directoryUrl).then(de => {
-            if (de.isDirectory) {
-                return de as DirectoryEntry;
-            } else {
-                return Promise.reject<DirectoryEntry>('input is not a directory');
+            for (const file of result.files) {
+                const fileStat = await Filesystem.stat({
+                    path: `${path}/${file}`
+                });
+                totalSize += fileStat.size;
             }
-        });
+
+            return totalSize;
+        } catch (error) {
+            console.error('Error getting directory size:', error);
+            return 0;
+        }
     }
 
-    private remove(fe: Entry): Promise<RemoveResult> {
-        return new Promise<RemoveResult>((resolve, reject) => {
-            fe.remove(
-                () => {
-                    resolve({success: true, fileRemoved: fe});
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
-    }
-
-    private copy(
-        srce: Entry,
-        destdir: DirectoryEntry,
-        newName: string
-    ): Promise<Entry> {
-        return new Promise<Entry>((resolve, reject) => {
-            srce.copyTo(
-                destdir,
-                newName,
-                deste => {
-                    resolve(deste);
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
-    }
-
-    private getDirectory(
-        directoryEntry: DirectoryEntry,
-        directoryName: string,
-        flags: Flags
-    ): Promise<DirectoryEntry> {
-        return new Promise<DirectoryEntry>((resolve, reject) => {
-            try {
-                directoryEntry.getDirectory(
-                    directoryName,
-                    flags,
-                    de => {
-                        resolve(de);
-                    },
-                    err => {
-                        reject(err);
-                    }
-                );
-            } catch (xc) {
-                reject(xc);
-            }
-        });
-    }
-
-    private rimraf(de: DirectoryEntry): Promise<RemoveResult> {
-        return new Promise<RemoveResult>((resolve, reject) => {
-            de.removeRecursively(
-                () => {
-                    resolve({success: true, fileRemoved: de});
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
-    }
-
-    private createWriter(fe: FileEntry): Promise<FileWriter> {
-        return new Promise<FileWriter>((resolve, reject) => {
-            fe.createWriter(
-                writer => {
-                    resolve(writer);
-                },
-                err => {
-                    reject(err);
-                }
-            );
-        });
-    }
-
-    /**
-     * Write content to FileEntry.
-     * @hidden
-     * Write to an existing file.
-     * @param {FileEntry} fe file entry object
-     * @param {string | Blob | ArrayBuffer} text text content or blob to write
-     * @param {IWriteOptions} options replace file if set to true. See WriteOptions for more information.
-     * @returns {Promise<FileEntry>}  Returns a Promise that resolves to updated file entry or rejects with an error.
-     */
-    private writeFileEntry(
-        fe: FileEntry,
-        text: string,
-        options: IWriteOptions
-    ) {
-        return this.createWriter(fe)
-            .then(writer => {
-                if (options.append) {
-                    writer.seek(writer.length);
-                }
-
-                if (options.truncate) {
-                    writer.truncate(options.truncate);
-                }
-
-                return this.write(writer, text);
-            })
-            .then(() => fe);
-    }
-
-    private write(
-        writer: FileWriter,
-        gu: string
-    ): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            writer.onwriteend = evt => {
-                if (writer.error) {
-                    reject(writer.error);
-                } else {
-                    resolve(evt);
-                }
-            };
-            writer.write(gu);
-        });
-    }
 }

@@ -1,3 +1,5 @@
+import { FilePaths } from "../../../services/file-path/file-path.enum";
+import { FilePathService } from "../../../services/file-path/file-path.service";
 export class Path {
     public static ASSETS_PATH = 'file:///android_asset/www/assets';
 
@@ -8,7 +10,12 @@ export class Path {
     public static fileNameFromFilePath(filePath: string): string {
         return filePath.substring(filePath.lastIndexOf('/') + 1);
     }
-    public static getAssetPath() : string {
-        return (window.device.platform.toLowerCase() === "ios" ?  cordova.file.applicationDirectory + 'www/assets': Path.ASSETS_PATH)
+    public static async getAssetPath(): Promise<string> {
+        const platform = window.device.platform.toLowerCase();
+        const result: string =  await FilePathService.getFilePath(FilePaths.ASSETS);
+
+        return platform === 'ios'
+            ? `${result}www/assets/`
+            : Path.ASSETS_PATH
     }
 }

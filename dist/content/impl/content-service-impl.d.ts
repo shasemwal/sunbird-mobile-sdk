@@ -91,7 +91,7 @@ export declare class ContentServiceImpl implements ContentService, DownloadCompl
     private handleUpdateSizeOnDeviceFail;
     private get contentServiceDelegate();
     downloadTranscriptFile(transcriptReq: any): Promise<string | undefined>;
-    createTranscriptDir(req: any, dataDirectory: any): Promise<string | void>;
+    createTranscriptDir(req: any, dataDirectory: any): Promise<string | undefined>;
     downloadTranscript(downloadRequest: any): Observable<{
         path: string;
     }>;

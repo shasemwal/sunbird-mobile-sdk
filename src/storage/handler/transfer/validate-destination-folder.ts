@@ -1,6 +1,6 @@
-import {TransferContentContext} from '../transfer-content-handler';
-import {FileService} from '../../../util/file/def/file-service';
-import {defer, Observable} from 'rxjs';
+import { TransferContentContext } from '../transfer-content-handler';
+import { FileService } from '../../../util/file/def/file-service';
+import { defer, Observable } from 'rxjs';
 
 export class ValidateDestinationFolder {
     constructor(private fileService: FileService) {
@@ -26,14 +26,17 @@ export class ValidateDestinationFolder {
         });
     }
 
-    private createDirectory(directory: string): Promise<string> {
-        return this.fileService.exists(directory).then((entry: Entry) => {
+    private async createDirectory(directory: string): Promise<string> {
+        try {
+            const entry = await this.fileService.exists(directory);
+            if (!entry.nativeURL) {
+                throw new Error('Directory entry does not have a valid URL');
+            }
             return entry.nativeURL;
-        }).catch(() => {
-            return this.fileService.createDir(directory, false).then((directoryEntry: DirectoryEntry) => {
-                return directoryEntry.nativeURL;
-            });
-        });
+        } catch {
+            const directoryEntry = await this.fileService.createDir(directory, false).catch((e) => { throw new Error(e); });
+            return directoryEntry.nativeURL;
+        }
     }
 
     private async canWrite(directory: string): Promise<undefined> {
