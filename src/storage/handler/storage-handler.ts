@@ -21,10 +21,10 @@ export class StorageHandler {
         await this.fileService.readAsText(
             storageFolder.concat(identifier),
             FileName.MANIFEST.valueOf()
-        ).then((manifestStringified) => {
+        ).then(async (manifestStringified) => {
             const manifest: Manifest = JSON.parse(manifestStringified);
             const items: any[] = manifest.archive.items;
-            return this.extractContentFromItem(items, destinationPath.concat('/'), manifest['ver'], keepLowerVersion);
+            return await this.extractContentFromItem(items, destinationPath.concat('/'), manifest['ver'], keepLowerVersion);
         }).catch((e) => {
             console.error(e);
         });
