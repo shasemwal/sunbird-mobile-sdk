@@ -240,7 +240,7 @@ export class DownloadServiceImpl implements DownloadService, SdkServiceOnInitDel
                     }).pipe(
                         tap(async (downloadId) => {
                             const platform =  window.device.platform.toLowerCase();
-                            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+                            const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.EXTERNAL;
                             const dataDirectory = await FilePathService.getFilePath(storagePath);
                             anyDownloadRequest.downloadedFilePath = dataDirectory +
                                 DownloadServiceImpl.DOWNLOAD_DIR_NAME + '/' + anyDownloadRequest.filename;

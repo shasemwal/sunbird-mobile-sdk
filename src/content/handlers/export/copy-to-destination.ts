@@ -11,7 +11,7 @@ export class CopyToDestination {
 
     public async execute(exportResponse: Response, contentExportRequest: ContentExportRequest): Promise<Response> {
         const platform = window.device.platform.toLowerCase();
-        const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
+        const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.CACHE;
         const folderPath = await FilePathService.getFilePath(storagePath);
         return new Promise<Response>((resolve, reject) => {
             let destinationFolder;

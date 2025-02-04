@@ -12,10 +12,6 @@ export class Path {
     }
     public static async getAssetPath(): Promise<string> {
         const platform = window.device.platform.toLowerCase();
-        const result: string =  await FilePathService.getFilePath(FilePaths.ASSETS);
-
-        return platform === 'ios'
-            ? `${result}www/assets/`
-            : Path.ASSETS_PATH
+        return platform === 'ios' ? "www/assets" : Path.ASSETS_PATH
     }
 }
