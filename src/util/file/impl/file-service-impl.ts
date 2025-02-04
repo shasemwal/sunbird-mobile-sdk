@@ -134,20 +134,22 @@ export class FileServiceImpl implements FileService {
     ): Promise<{ success: boolean, uri: string }> {
         try {
             const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
-            const returnVal = { success: true, uri: fullPath };
-
-            if (replace) {
-                await Filesystem.writeFile({
-                    path: fullPath,
-                    data: '',
-                    encoding: Encoding.UTF8
-                });
-                return returnVal;
+            const fileExists = await this.checkFileExists(fullPath);
+    
+            if (fileExists && !replace) {
+                throw new Error('File already exists');
             }
-            await Filesystem.stat({
-                path: fullPath
+    
+            await Filesystem.writeFile({
+                path: fullPath,
+                data: '',
+                encoding: Encoding.UTF8
             });
-            return returnVal;
+    
+            return {
+                success: true,
+                uri: fullPath
+            };
         } catch (error) {
             console.error('Error creating file:', error);
             throw error;
@@ -200,28 +202,38 @@ export class FileServiceImpl implements FileService {
             const platform = window.device.platform.toLowerCase();
             const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.DATA;
             const folderUri = await FilePathService.getFilePath(storagePath);
-
-            const returnVal = {
+            const dirExists = await this.checkFileExists(path);
+    
+            if (dirExists && !replace) {
+                throw new Error('Directory already exists');
+            }
+    
+            await Filesystem.mkdir({
+                path: path,
+                recursive: true
+            });
+    
+            return {
                 isFile: false,
                 isDirectory: true,
                 name: path.split('/').pop() || '',
                 fullPath: path,
                 nativeURL: folderUri
             };
-            if (replace) {
-                await Filesystem.mkdir({
-                    path: path,
-                    recursive: true
-                });
-                return returnVal;
-            }
-            await Filesystem.stat({
-                path: path,
-            });
-            return returnVal;
         } catch (error) {
             console.error('Error creating directory:', error);
             throw error;
+        }
+    }
+    
+    private async checkFileExists(path: string): Promise<boolean> {
+        try {
+            await Filesystem.stat({
+                path: path
+            });
+            return true;
+        } catch {
+            return false;
         }
     }
 
