@@ -85,7 +85,7 @@ export class ArchiveServiceImpl implements ArchiveService {
             const folderUri = await FilePathService.getFilePath(storagePath);
             return { folderUri };
         }).pipe(
-            mergeMap(folderUri => {
+            mergeMap(({ folderUri }) => {
                 const workspacePath = `${folderUri}${UniqueId.generateUniqueId()}`;
                 let lastResult: ArchiveExportProgress | undefined;
 
@@ -181,7 +181,7 @@ export class ArchiveServiceImpl implements ArchiveService {
             const platform = window.device.platform.toLowerCase();
             const storagePath = platform === 'ios' ? FilePaths.DOCUMENTS : FilePaths.CACHE;
             const folderPath = await FilePathService.getFilePath(storagePath);
-            const zipFilePath = `${folderPath}/archive-${new Date().toISOString()}.zip`;
+            const zipFilePath = `${folderPath}archive-${new Date().toISOString()}.zip`;
             return { zipFilePath };
         }).pipe(
             mergeMap(({ zipFilePath }) => {
@@ -216,7 +216,7 @@ export class ArchiveServiceImpl implements ArchiveService {
                 }[]>((acc, [objectType, objectProgress]) => {
                     return acc.concat(objectProgress.completed);
                 }, []);
-    
+
                 return from(this.fileService.writeFile(
                     workspacePath,
                     'manifest.json',
