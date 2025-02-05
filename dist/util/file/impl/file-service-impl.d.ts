@@ -11,7 +11,7 @@ export declare class FileServiceImpl implements FileService {
     private fileSystem;
     private initialized;
     init(): void;
-    readAsText(path: string, filePath: string): Promise<string>;
+    readAsText(path: string, fileName: string): Promise<string>;
     readAsBinaryString(fileData: string | Blob): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
     writeFile(path: string, fileName: string, text: string, options?: IWriteOptions): Promise<{
@@ -29,7 +29,8 @@ export declare class FileServiceImpl implements FileService {
      */
     createFile(path: string, fileName: string, replace: boolean): Promise<{
         success: boolean;
-        uri: string;
+        path: string;
+        nativeURL: string;
     }>;
     getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{
         isFile: boolean;

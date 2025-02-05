@@ -10,7 +10,7 @@ export interface FileService {
 
     writeFile(path: string, fileName: string, text: string, options: IWriteOptions): Promise<{ success: boolean }>;
 
-    createFile(path: string, fileName: string, replace: boolean): Promise<{ success: boolean, uri: string }>;
+    createFile(path: string, fileName: string, replace: boolean): Promise<{ success: boolean, path: string, nativeURL: string }>;
 
     removeFile(path: string): Promise<{ success: boolean }>;
 
