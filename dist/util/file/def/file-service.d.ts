@@ -9,7 +9,8 @@ export interface FileService {
     }>;
     createFile(path: string, fileName: string, replace: boolean): Promise<{
         success: boolean;
-        uri: string;
+        path: string;
+        nativeURL: string;
     }>;
     removeFile(path: string): Promise<{
         success: boolean;
