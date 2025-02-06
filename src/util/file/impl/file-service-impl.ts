@@ -41,25 +41,36 @@ export class FileServiceImpl implements FileService {
             });
 
             let blobData: Blob;
-            if (typeof result.data === 'string') {
-                blobData = new Blob([result.data], { type: 'text/plain' });
+            if (typeof result.data === "string") {
+                return result.data;
             } else if (result.data instanceof Blob) {
                 blobData = result.data;
+                return new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+    
+                    reader.onload = () => {
+                        console.log("Reader successfully read the file:", reader.result);
+                        resolve(reader.result as string);
+                    };
+    
+                    reader.onerror = () => {
+                        console.error("Error reading Blob:", reader.error);
+                        reject(new Error("Failed to read Blob"));
+                    };
+    
+                    console.log("Starting to read Blob data...");
+                    reader.readAsText(blobData);
+                });
             } else {
-                throw new Error('Expected a string or Blob');
+                throw new Error("Expected a string or Blob");
             }
 
-            return new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = () => reject(new Error('Failed to read Blob'));
-                reader.readAsText(blobData);
-            });
         } catch (error) {
-            console.error('Error reading file as text:', error);
+            console.error("Error reading file as text:", error);
             throw error;
         }
     }
+
 
     async readAsBinaryString(fileData: string | Blob): Promise<string> {
         let blobData: Blob;
@@ -221,7 +232,7 @@ export class FileServiceImpl implements FileService {
                 isDirectory: true,
                 name: path.split('/').pop() || '',
                 fullPath: path,
-                nativeURL: folder.uri
+                nativeURL: folder.uri + "/"
             };
         } catch (error) {
             console.error('Error creating directory:', error);
@@ -388,7 +399,12 @@ export class FileServiceImpl implements FileService {
 
     async getTempLocation(destinationPath: string): Promise<{ path: string, nativeURL: string }> {
         try {
-            const tempPath = `${destinationPath}/tmp`.replace(/\/\//g, '/');
+            let tempPath = `${destinationPath}/tmp`.replace(/\/\//g, '/');
+            if (tempPath.startsWith("file:///")) {
+                tempPath = tempPath.replace("file://", "");
+            } else if (tempPath.startsWith("file://")) {
+                tempPath = tempPath.replace("file:/", "");
+            }
             await Filesystem.stat({ path: tempPath })
                 .catch(async (error) => {
                     console.error('Error getting temp location:', error, tempPath);
