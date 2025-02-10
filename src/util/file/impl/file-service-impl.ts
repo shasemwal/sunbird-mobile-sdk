@@ -7,7 +7,7 @@ import {
     IWriteOptions,
     Metadata,
 } from '../index';
-import { Filesystem, Encoding, FileInfo } from '@capacitor/filesystem';
+import { Filesystem, Encoding, FileInfo, Directory } from '@capacitor/filesystem';
 import { Plugins } from '@capacitor/core';
 
 const { DiskSpacePlugin } = Plugins;
@@ -112,7 +112,7 @@ export class FileServiceImpl implements FileService {
         options: IWriteOptions = {}
     ): Promise<{ success: boolean }> {
         try {
-            const { replace = false } = options;        
+            const { replace = false } = options;
             const fullPath = `${path}/${fileName}`
 
             await Filesystem.writeFile({
@@ -146,7 +146,7 @@ export class FileServiceImpl implements FileService {
         replace: boolean,
     ): Promise<{ success: boolean, path: string, nativeURL: string }> {
         try {
-            const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
+            const fullPath = `${path}/${fileName}`
             const fileExists = await this.checkFileExists(fullPath);
 
             if (fileExists && !replace) {
@@ -173,7 +173,7 @@ export class FileServiceImpl implements FileService {
 
     async getFile(directoryEntry: DirectoryEntry, fileName: string, flags: Flags): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
-            const fullPath = `${directoryEntry.fullPath}/${fileName}`.replace(/\/\//g, '/');
+            const fullPath = `${directoryEntry.fullPath}/${fileName}`
             const fileInfo = await Filesystem.stat({
                 path: fullPath
             });
@@ -214,23 +214,34 @@ export class FileServiceImpl implements FileService {
     async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             const dirExists = await this.checkFileExists(path);
-            if (dirExists && replace) {
-                await Filesystem.rmdir({ path, recursive: true });
-                await Filesystem.mkdir({ path, recursive: true });
-            } else if (!dirExists) {
-                await Filesystem.mkdir({ path, recursive: true });
+            if (dirExists && !replace) {
+                return {
+                    isFile: false,
+                    isDirectory: true,
+                    name: path.split('/').pop() || '',
+                    fullPath: path,
+                    nativeURL: path + '/'
+                };
+            }
+            if(replace && dirExists) {
+                await Filesystem.rmdir({
+                    path: path,
+                    recursive: true
+                });
             }
 
-            const folder = await Filesystem.stat({
-                path: path
+            await Filesystem.mkdir({
+                path: path,
+                recursive: true
             });
+
 
             return {
                 isFile: false,
                 isDirectory: true,
                 name: path.split('/').pop() || '',
                 fullPath: path,
-                nativeURL: folder.uri + "/"
+                nativeURL: path + '/'
             };
         } catch (error) {
             console.error('Error creating directory:', error);
@@ -300,7 +311,10 @@ export class FileServiceImpl implements FileService {
 
     async removeDir(path: string, dirName: string): Promise<{ success: boolean }> {
         try {
-            const fullPath = `${path}/${dirName}`.replace(/\/\//g, '/');
+            if (path.endsWith('/')) {
+                path = path.slice(0, -1);
+            }
+            const fullPath = `${path}/${dirName}`
             await Filesystem.rmdir({
                 path: fullPath,
                 recursive: true
@@ -342,21 +356,26 @@ export class FileServiceImpl implements FileService {
      */
     async copyDir(path: string, dirName: string, newPath: string, newDirName: string) {
         let updatedPath = path;
+        let newUpdatedPath = newPath;
         if (path.endsWith('/')) {
             updatedPath = path.slice(0, -1);
         }
+        if(newPath.endsWith('/')) {
+            newUpdatedPath = newPath.slice(0, -1);
+        }
         const sourcePath = `${updatedPath}/${dirName}`;
-        const destPath = `${newPath}/${newDirName}`;
+        const destPath = `${newUpdatedPath}/${newDirName}`;
         return await this.copyEntry(sourcePath, destPath, false);
     }
 
     async copyFile(path: string, fileName: string, newPath: string, newFileName: string) {
         let updatedPath = path;
+        let newUpdatedPath = newPath; 
         if (path.endsWith('/')) {
             updatedPath = path.slice(0, -1);
         }
-        let newUpdatedPath = newPath
-        if (path.endsWith('/')) {
+        
+        if(newPath.endsWith('/')) { 
             newUpdatedPath = newPath.slice(0, -1);
         }
         const sourcePath = `${updatedPath}/${fileName}`;
@@ -364,11 +383,13 @@ export class FileServiceImpl implements FileService {
         return await this.copyEntry(sourcePath, destPath, true);
     }
 
+    
+
     private async copyEntry(sourcePath: string, destPath: string, isFile: boolean) {
         try {
             const result = await Filesystem.copy({
-                from: sourcePath.replace(/\/\//g, '/'),
-                to: destPath.replace(/\/\//g, '/')
+                from: sourcePath,
+                to: destPath
             });
 
             return {
@@ -401,15 +422,10 @@ export class FileServiceImpl implements FileService {
 
     async getTempLocation(destinationPath: string): Promise<{ path: string, nativeURL: string }> {
         try {
-            let tempPath = `${destinationPath}/tmp`.replace(/\/\//g, '/');
-            if (tempPath.startsWith("file:///")) {
-                tempPath = tempPath.replace("file://", "");
-            } else if (tempPath.startsWith("file://")) {
-                tempPath = tempPath.replace("file:/", "");
-            }
+            let tempPath =  destinationPath.endsWith("/") ? `${destinationPath}tmp/` : `${destinationPath}/tmp/`
             await Filesystem.stat({ path: tempPath })
                 .catch(async (error) => {
-                    console.error('Error getting temp location:', error, tempPath);
+                    console.info('Error getting temp location:', error, tempPath);
                     await Filesystem.mkdir({
                         path: tempPath,
                         recursive: true
@@ -417,8 +433,8 @@ export class FileServiceImpl implements FileService {
                 });
 
             return {
-                path: tempPath + "/",
-                nativeURL: tempPath + "/"
+                path: tempPath,
+                nativeURL: tempPath
             };
         } catch (error) {
             console.error('Error creating temp location:', error, destinationPath);
@@ -469,22 +485,45 @@ export class FileServiceImpl implements FileService {
         let totalSize = 0;
 
         try {
-            const result = await Filesystem.readdir({
-                path: path
-            });
-
-            for (const file of result.files) {
-                const fileStat = await Filesystem.stat({
-                    path: `${path}/${file}`
-                });
-                totalSize += fileStat.size;
-            }
-
+            totalSize = await this.size(path);
             return totalSize;
         } catch (error) {
             console.error('Error getting directory size:', error);
             return 0;
         }
     }
+
+    async size(dirPath: string): Promise<number> {
+        let totalSize = 0;
+      
+        try {
+          // Read the contents of the directory
+          const dirContents = await Filesystem.readdir({
+            path: dirPath,
+          });
+      
+          for (const item of dirContents.files) {
+            const itemPath = `${dirPath}/${item}`;
+      
+            // Get file statistics
+            const fileStat = await Filesystem.stat({
+              path: itemPath
+            });
+      
+            if (fileStat.type === 'directory') {
+              // Recursively calculate the size of subdirectories
+              totalSize += await this.size(itemPath);
+            } else if (fileStat.type === 'file') {
+              // Accumulate the file size
+              totalSize += fileStat.size;
+            }
+          }
+        } catch (error) {
+          console.error(`Error reading directory '${dirPath}':`, error);
+        }
+      
+        return totalSize;
+      }
+      
 
 }
