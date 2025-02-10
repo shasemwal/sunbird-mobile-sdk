@@ -152,7 +152,7 @@ export class TelemetryExportDelegate implements ArchiveExportDelegate {
             {
                 replace: true
             }
-    ).catch((e) => { throw new Error(e); });
+        ).catch((e) => { throw new Error(e); });
 
         return {
             size: [NetworkQueueEntry.COLUMN_NAME_DATA].length,

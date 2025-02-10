@@ -112,8 +112,8 @@ export class FileServiceImpl implements FileService {
         options: IWriteOptions = {}
     ): Promise<{ success: boolean }> {
         try {
-            const { replace = false } = options;
-            const fullPath = `${path}/${fileName}`.replace(/\/\//g, '/');
+            const { replace = false } = options;        
+            const fullPath = `${path}/${fileName}`
 
             await Filesystem.writeFile({
                 path: fullPath,
@@ -214,14 +214,12 @@ export class FileServiceImpl implements FileService {
     async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
             const dirExists = await this.checkFileExists(path);
-            if (dirExists && !replace) {
-                throw new Error('Directory already exists');
+            if (dirExists && replace) {
+                await Filesystem.rmdir({ path, recursive: true });
+                await Filesystem.mkdir({ path, recursive: true });
+            } else if (!dirExists) {
+                await Filesystem.mkdir({ path, recursive: true });
             }
-
-            await Filesystem.mkdir({
-                path: path,
-                recursive: true
-            });
 
             const folder = await Filesystem.stat({
                 path: path
@@ -357,8 +355,12 @@ export class FileServiceImpl implements FileService {
         if (path.endsWith('/')) {
             updatedPath = path.slice(0, -1);
         }
+        let newUpdatedPath = newPath
+        if (path.endsWith('/')) {
+            newUpdatedPath = newPath.slice(0, -1);
+        }
         const sourcePath = `${updatedPath}/${fileName}`;
-        const destPath = `${newPath}/${newFileName}`;
+        const destPath = `${newUpdatedPath}/${newFileName}`;
         return await this.copyEntry(sourcePath, destPath, true);
     }
 
