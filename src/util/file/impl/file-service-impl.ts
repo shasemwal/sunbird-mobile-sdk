@@ -112,14 +112,8 @@ export class FileServiceImpl implements FileService {
         options: IWriteOptions = {}
     ): Promise<{ success: boolean }> {
         try {
-            const { replace = false } = options;
-            let updatedPath = path;
-            if (updatedPath.startsWith("file:///")) {
-                updatedPath = updatedPath.replace("file://", "");
-            } else if (updatedPath.startsWith("file://")) {
-                updatedPath = updatedPath.replace("file:/", "");
-            }            
-            const fullPath = `${updatedPath}/${fileName}`.replace(/\/\//g, '/');
+            const { replace = false } = options;        
+            const fullPath = `${path}/${fileName}`
 
             await Filesystem.writeFile({
                 path: fullPath,
