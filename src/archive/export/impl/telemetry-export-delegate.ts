@@ -147,12 +147,12 @@ export class TelemetryExportDelegate implements ArchiveExportDelegate {
 
         await this.fileService.writeFile(
             this.workspaceSubPath,
-            batch[NetworkQueueEntry.COLUMN_NAME_MSG_ID],
+            `${batch[NetworkQueueEntry.COLUMN_NAME_MSG_ID]}.txt`,
             batch[NetworkQueueEntry.COLUMN_NAME_DATA],
             {
                 replace: true
             }
-    ).catch((e) => { throw new Error(e); });
+        ).catch((e) => { throw new Error(e); });
 
         return {
             size: [NetworkQueueEntry.COLUMN_NAME_DATA].length,
