@@ -150,7 +150,7 @@ export class ExtractPayloads {
             } else {
                 doesContentExist = false;
                 // let isUnzippingSuccessful = false;
-                if (artifactUrl) {
+                if (artifactUrl && !artifactUrl.startsWith('https:')) {
                     if (!ContentUtil.isInlineIdentity(contentDisposition, contentEncoding) && mimeType === MimeType.EPUB) {
                         try {
                             await this.copyAssets(importContext.tmpLocation!, artifactUrl, payloadDestination!);

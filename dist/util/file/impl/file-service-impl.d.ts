@@ -123,4 +123,5 @@ export declare class FileServiceImpl implements FileService {
      */
     getMetaData(path: string | Entry): Promise<Metadata>;
     getDirectorySize(path: string): Promise<number>;
+    size(dirPath: string): Promise<number>;
 }
