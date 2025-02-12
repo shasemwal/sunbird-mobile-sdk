@@ -485,7 +485,7 @@ export class FileServiceImpl implements FileService {
         let totalSize = 0;
 
         try {
-            totalSize = await this.size(path);
+            totalSize = await this.size(path, totalSize);
             return totalSize;
         } catch (error) {
             console.error('Error getting directory size:', error);
@@ -493,37 +493,35 @@ export class FileServiceImpl implements FileService {
         }
     }
 
-    async size(dirPath: string): Promise<number> {
-        let totalSize = 0;
-      
-        try {
-          // Read the contents of the directory
-          const dirContents = await Filesystem.readdir({
-            path: dirPath,
-          });
-      
-          for (const item of dirContents.files) {
-            const itemPath = `${dirPath}/${item}`;
-      
-            // Get file statistics
-            const fileStat = await Filesystem.stat({
-              path: itemPath
-            });
-      
-            if (fileStat.type === 'directory') {
-              // Recursively calculate the size of subdirectories
-              totalSize += await this.size(itemPath);
-            } else if (fileStat.type === 'file') {
-              // Accumulate the file size
-              totalSize += fileStat.size;
-            }
-          }
-        } catch (error) {
-          console.error(`Error reading directory '${dirPath}':`, error);
+    async size(dirPath: string, totalSize: number = 0): Promise<number> {
+        if(!dirPath){
+            return totalSize;
         }
-      
+        try {
+            // Read the contents of the directory
+            const dirContents = await Filesystem.readdir({
+                path: dirPath,
+            });
+
+            if (dirContents.files.length !== 0) {
+                for (const item of dirContents.files) {
+                    const itemPath =  dirPath.endsWith('/') ? `${dirPath}${item.name}` : `${dirPath}/${item.name}`;
+                    if (item.type === 'directory') {
+                        // Recursively calculate the size of subdirectories
+                        totalSize += await this.size(itemPath, totalSize);
+                    } else if (item.type === 'file') {
+                        // Accumulate the file size
+                        totalSize += item.size;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error reading directory '${dirPath}':`, error);
+            return 0;
+        }
+
         return totalSize;
-      }
-      
+    }
+
 
 }
