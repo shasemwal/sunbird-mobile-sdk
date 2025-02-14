@@ -201,11 +201,8 @@ export class FileServiceImpl implements FileService {
 
     async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
-            console.log('path:', path);
             const dirExists = await this.checkFileExists(path);
-            console.log('dirExists:', dirExists);
             if (dirExists && !replace) {
-                console.log('returning:', path);
                 return {
                     isFile: false,
                     isDirectory: true,
@@ -221,14 +218,12 @@ export class FileServiceImpl implements FileService {
                 });
             }
 
-            console.log('creating directory:', path);
             await Filesystem.mkdir({
                 path: path,
                 recursive: true
             });
 
 
-            console.log('returning path:', path);
             return {
                 isFile: false,
                 isDirectory: true,
