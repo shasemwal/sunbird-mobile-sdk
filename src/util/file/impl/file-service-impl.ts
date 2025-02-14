@@ -71,24 +71,12 @@ export class FileServiceImpl implements FileService {
         }
     }
 
-
-    async readAsBinaryString(fileData: string | Blob): Promise<string> {
-        let blobData: Blob;
-
-        if (typeof fileData === 'string') {
-            blobData = new Blob([fileData], { type: 'text/plain' });
-        } else if (fileData instanceof Blob) {
-            blobData = fileData;
-        } else {
-            throw new Error('Expected a string or Blob');
-        }
-
-        return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error('Failed to read Blob'));
-            reader.readAsBinaryString(blobData);
+    async readAsBinaryString(path: string, filePath: string): Promise<string> {
+        const result = await Filesystem.readFile({
+            path: path.endsWith("/") ? `${path}${filePath}` : `${path}/${filePath}`,
         });
+        let fileData = result.data as string;
+        return atob(fileData)
     }
 
     readFileFromAssets(fileName: string): Promise<string> {
@@ -213,8 +201,11 @@ export class FileServiceImpl implements FileService {
 
     async createDir(path: string, replace: boolean): Promise<{ isFile: boolean, isDirectory: boolean, name: string, fullPath: string, nativeURL: string }> {
         try {
+            console.log('path:', path);
             const dirExists = await this.checkFileExists(path);
+            console.log('dirExists:', dirExists);
             if (dirExists && !replace) {
+                console.log('returning:', path);
                 return {
                     isFile: false,
                     isDirectory: true,
@@ -230,12 +221,14 @@ export class FileServiceImpl implements FileService {
                 });
             }
 
+            console.log('creating directory:', path);
             await Filesystem.mkdir({
                 path: path,
                 recursive: true
             });
 
 
+            console.log('returning path:', path);
             return {
                 isFile: false,
                 isDirectory: true,

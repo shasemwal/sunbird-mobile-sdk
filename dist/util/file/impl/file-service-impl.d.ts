@@ -12,7 +12,7 @@ export declare class FileServiceImpl implements FileService {
     private initialized;
     init(): void;
     readAsText(path: string, fileName: string): Promise<string>;
-    readAsBinaryString(fileData: string | Blob): Promise<string>;
+    readAsBinaryString(path: string, filePath: string): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
     writeFile(path: string, fileName: string, text: string, options?: IWriteOptions): Promise<{
         success: boolean;
