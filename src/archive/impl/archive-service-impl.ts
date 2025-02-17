@@ -250,7 +250,16 @@ export class ArchiveServiceImpl implements ArchiveService {
     }
 
     import(importRequest: ArchiveImportRequest): Observable<ArchiveImportProgress> {
-        let lastResult: ArchiveImportProgress;
+
+        if (!importRequest.objects.length) {
+            return throwError(new InvalidRequestError('No archive objects to export'));
+        }
+
+        let lastResult: ArchiveImportProgress = {
+            task: '',
+            progress: new Map<ArchiveObjectType, ArchiveObjectImportProgress>(),
+            filePath: importRequest.filePath
+        };
 
         return defer(async () => {
             const platform = window.device.platform.toLowerCase();
@@ -261,8 +270,16 @@ export class ArchiveServiceImpl implements ArchiveService {
         }).pipe(
             mergeMap(({ workspacePath }) =>
                 concat(
-                    defer(() => this.extractZipArchive(lastResult, workspacePath)),
-                    defer(() => this.readManifestFile(lastResult, workspacePath, importRequest.objects.map(o => o.type))),
+                    defer(() => from(this.fileService.createDir(workspacePath, false))).pipe(
+                        concatMap(() => this.extractZipArchive(lastResult, workspacePath))
+                    ),
+                    defer(() => {
+                        const fileNameWithoutExtension = FileUtil.getFileName(importRequest.filePath).replace('.zip', '');
+
+                        const extractedFolderPath = `${workspacePath}/${fileNameWithoutExtension}`;
+
+                        return this.readManifestFile(lastResult, extractedFolderPath, importRequest.objects.map(o => o.type))
+                    }),
                     defer(() => this.generateImportTelemetries(lastResult, workspacePath)),
                     defer(() => {
                         return combineLatest(
@@ -273,6 +290,9 @@ export class ArchiveServiceImpl implements ArchiveService {
                                     case ArchiveObjectType.PROFILE:
                                         throw new Error('To be implemented');
                                     case ArchiveObjectType.TELEMETRY:
+                                        const fileNameWithoutExtension = FileUtil.getFileName(importRequest.filePath).replace('.zip', '');
+                                        const extractedFolderPath = `${workspacePath}/${fileNameWithoutExtension}`;
+
                                         return new TelemetryImportDelegate(
                                             this.dbService,
                                             this.fileService,
@@ -281,14 +301,16 @@ export class ArchiveServiceImpl implements ArchiveService {
                                         ).import({
                                             filePath: importRequest.filePath
                                         }, {
-                                            workspacePath,
+                                            workspacePath: extractedFolderPath,
                                             items: lastResult!.progress
                                                 .get(ArchiveObjectType.TELEMETRY)!.pending as TelemetryArchivePackageMeta[]
                                         }).pipe(
-                                            map((progress) => ({
-                                                type: ArchiveObjectType.TELEMETRY,
-                                                progress: progress
-                                            }))
+                                            map((progress) => {
+                                                return {
+                                                    type: ArchiveObjectType.TELEMETRY,
+                                                    progress: progress
+                                                };
+                                            }),
                                         );
                                 }
                             })

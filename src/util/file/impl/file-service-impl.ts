@@ -71,24 +71,12 @@ export class FileServiceImpl implements FileService {
         }
     }
 
-
-    async readAsBinaryString(fileData: string | Blob): Promise<string> {
-        let blobData: Blob;
-
-        if (typeof fileData === 'string') {
-            blobData = new Blob([fileData], { type: 'text/plain' });
-        } else if (fileData instanceof Blob) {
-            blobData = fileData;
-        } else {
-            throw new Error('Expected a string or Blob');
-        }
-
-        return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = () => reject(new Error('Failed to read Blob'));
-            reader.readAsBinaryString(blobData);
+    async readAsBinaryString(path: string, filePath: string): Promise<string> {
+        const result = await Filesystem.readFile({
+            path: path.endsWith("/") ? `${path}${filePath}` : `${path}/${filePath}`,
         });
+        let fileData = result.data as string;
+        return atob(fileData)
     }
 
     readFileFromAssets(fileName: string): Promise<string> {
