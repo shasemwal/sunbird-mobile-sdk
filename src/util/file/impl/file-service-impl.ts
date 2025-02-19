@@ -473,7 +473,7 @@ export class FileServiceImpl implements FileService {
         let totalSize = 0;
 
         try {
-            totalSize = await this.size(path, totalSize);
+            totalSize = await this.size(path);
             return totalSize;
         } catch (error) {
             console.error('Error getting directory size:', error);
@@ -481,7 +481,8 @@ export class FileServiceImpl implements FileService {
         }
     }
 
-    async size(dirPath: string, totalSize: number = 0): Promise<number> {
+    async size(dirPath: string): Promise<number> {
+        let totalSize = 0
         if(!dirPath){
             return totalSize;
         }
@@ -496,7 +497,7 @@ export class FileServiceImpl implements FileService {
                     const itemPath =  dirPath.endsWith('/') ? `${dirPath}${item.name}` : `${dirPath}/${item.name}`;
                     if (item.type === 'directory') {
                         // Recursively calculate the size of subdirectories
-                        totalSize += await this.size(itemPath, totalSize);
+                        totalSize += await this.size(itemPath);
                     } else if (item.type === 'file') {
                         // Accumulate the file size
                         totalSize += item.size;
