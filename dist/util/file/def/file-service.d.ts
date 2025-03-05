@@ -1,10 +1,10 @@
 import { FileInfo } from '@capacitor/filesystem';
-import { DirectoryEntry, Flags, IWriteOptions, Metadata } from '../index';
+import { DirectoryEntry, Flags, Metadata } from '../index';
 export interface FileService {
     readAsText(path: string, file: string): Promise<string>;
     readAsBinaryString(path: string, file: string): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
-    writeFile(path: string, fileName: string, text: string, options: IWriteOptions): Promise<{
+    writeFile(path: string, fileName: string, text: string): Promise<{
         success: boolean;
     }>;
     createFile(path: string, fileName: string, replace: boolean): Promise<{

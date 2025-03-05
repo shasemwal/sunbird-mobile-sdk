@@ -62,7 +62,6 @@ export class CourseCertificateManagerImpl implements CourseCertificateManager {
             return await this.fileService.writeFile(
                 folderUri,
                 fileName, blob as any,
-                { replace: true }
             ).
                 then(() => {
                     return {

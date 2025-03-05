@@ -1,6 +1,7 @@
 import { FileService } from '../def/file-service';
-import { DirectoryEntry, Entry, Flags, IWriteOptions, Metadata } from '../index';
+import { DirectoryEntry, Entry, Flags, Metadata } from '../index';
 import { FileInfo } from '@capacitor/filesystem';
+import { DeviceInfo } from '../../device/index';
 /**
  * Allows the user to look up the Entry for a file or directory referred to by a local URL.
  * @param url A URL referring to a local file in a filesystem accessable via this API.
@@ -8,13 +9,15 @@ import { FileInfo } from '@capacitor/filesystem';
  * @param errorCallback A callback that is called when errors happen, or when the request to obtain the Entry is denied.
  */
 export declare class FileServiceImpl implements FileService {
+    private deviceInfo;
     private fileSystem;
     private initialized;
+    constructor(deviceInfo: DeviceInfo);
     init(): void;
     readAsText(path: string, fileName: string): Promise<string>;
     readAsBinaryString(path: string, filePath: string): Promise<string>;
     readFileFromAssets(fileName: string): Promise<string>;
-    writeFile(path: string, fileName: string, text: string, options?: IWriteOptions): Promise<{
+    writeFile(path: string, fileName: string, text: string): Promise<{
         success: boolean;
     }>;
     /**
@@ -123,5 +126,5 @@ export declare class FileServiceImpl implements FileService {
      */
     getMetaData(path: string | Entry): Promise<Metadata>;
     getDirectorySize(path: string): Promise<number>;
-    size(dirPath: string, totalSize?: number): Promise<number>;
+    size(dirPath: string): Promise<number>;
 }
