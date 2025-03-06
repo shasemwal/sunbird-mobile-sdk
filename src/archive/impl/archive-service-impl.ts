@@ -229,8 +229,7 @@ export class ArchiveServiceImpl implements ArchiveService {
                             count: flattenedItems.length,
                             items: flattenedItems
                         }
-                    } as ArchiveManifest),
-                    { replace: true }
+                    } as ArchiveManifest)
                 )).pipe(
                     catchError(error => {
                         console.error('Error writing manifest file:', error);

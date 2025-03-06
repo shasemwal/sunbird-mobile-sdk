@@ -45,8 +45,7 @@ export class CreateHierarchy {
         const contentInDb = await this.dbService.read(GetContentDetailsHandler.getReadContentQuery(rootContentId!)).toPromise();
         await this.fileService.writeFile(ContentUtil.getBasePath(contentInDb[0][COLUMN_NAME_PATH]!),
             this.HIERARCHY_FILE_NAME,
-            JSON.stringify(rootContent),
-            {replace: true}).catch((e) => { throw new Error(e)});
+            JSON.stringify(rootContent)).catch((e) => { throw new Error(e)});
 
         const response: Response = new Response();
         response.body = importContentContext;

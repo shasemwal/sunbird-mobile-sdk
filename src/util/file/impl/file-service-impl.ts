@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { FileService } from '../def/file-service';
 import {
     DirectoryEntry,
@@ -8,9 +8,11 @@ import {
     Metadata,
 } from '../index';
 import { Filesystem, Encoding, FileInfo, Directory } from '@capacitor/filesystem';
-import { Plugins } from '@capacitor/core';
+import { DeviceInfo, StorageVolume } from '../../device/index';
+import { from } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+import { InjectionTokens } from '../../../injection-tokens';
 
-const { DiskSpacePlugin } = Plugins;
 
 /**
  * Allows the user to look up the Entry for a file or directory referred to by a local URL.
@@ -24,6 +26,11 @@ export class FileServiceImpl implements FileService {
 
     private fileSystem: FileSystem;
     private initialized = false;
+
+    constructor(
+        @inject(InjectionTokens.DEVICE_INFO) private deviceInfo: DeviceInfo,
+    ) {
+    }
 
     init() {
         this.initialized = true;
@@ -97,10 +104,8 @@ export class FileServiceImpl implements FileService {
         path: string,
         fileName: string,
         text: string,
-        options: IWriteOptions = {}
     ): Promise<{ success: boolean }> {
         try {
-            const { replace = false } = options;
             const fullPath = `${path}/${fileName}`
 
             await Filesystem.writeFile({
@@ -108,7 +113,6 @@ export class FileServiceImpl implements FileService {
                 data: text,
                 encoding: Encoding.UTF8,
                 recursive: true,
-                ...(replace && { replace: true })
             });
 
             return { success: true };
@@ -431,12 +435,20 @@ export class FileServiceImpl implements FileService {
     }
 
     async getFreeDiskSpace(): Promise<number> {
-        return DiskSpacePlugin.getFreeDiskSpace()
-            .then(result => result.freeSpace)
-            .catch(error => {
+        return from(this.deviceInfo.getStorageVolumes()).pipe(
+            tap((volumes: StorageVolume[]) => {
+                volumes.forEach(volume => {
+                    console.log(`Volume: ${volume.storageDestination}, Available Size: ${volume.info.availableSize}`);
+                });
+            }),
+            map((volumes: StorageVolume[]) => {
+                return volumes.reduce((total, volume) => total + volume.info.availableSize, 0);
+            }),
+            catchError(error => {
                 console.error('Error getting free disk space:', error);
                 throw error;
-            });
+            })
+        ).toPromise();
     }
 
     /**
