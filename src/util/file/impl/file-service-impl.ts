@@ -258,7 +258,7 @@ export class FileServiceImpl implements FileService {
      * @param {string} directoryPath. Please refer to the iOS and Android filesystems above
      * @returns {Promise<Entry[]>} Returns a Promise that resolves to an array of Entry objects or rejects with an error.
      */
-    async listDir(directoryPath: string): Promise<{ isFile: boolean; isDirectory: boolean; name: FileInfo; fullPath: string; filesystem: string; nativeURL: string; remove?: () => Promise<void>; }[]> {
+    async listDir(directoryPath: string): Promise<{ isFile: boolean; isDirectory: boolean; name: string; fullPath: string; filesystem: string; nativeURL: string; remove?: () => Promise<void>; }[]> {
         try {
             const result = await Filesystem.readdir({
                 path: directoryPath
@@ -266,20 +266,15 @@ export class FileServiceImpl implements FileService {
 
             const entries = await Promise.all(result.files.map(async (file) => {
                 const fullPath = `${directoryPath}/${file}`.replace(/\/\//g, '/');
-
-                const stat = await Filesystem.stat({
-                    path: fullPath
-                });
-
                 return {
-                    isFile: stat.type === 'file',
-                    isDirectory: stat.type === 'directory',
-                    name: file,
+                    isFile: file.type === 'file',
+                    isDirectory: file.type === 'directory',
+                    name: file.name,
                     fullPath: fullPath,
                     filesystem: 'default',
-                    nativeURL: stat.uri,
+                    nativeURL: file.uri,
                     remove: async () => {
-                        if (stat.type === 'file') {
+                        if (file.type === 'file') {
                             await Filesystem.deleteFile({
                                 path: fullPath
                             });

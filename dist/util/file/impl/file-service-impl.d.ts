@@ -1,6 +1,5 @@
 import { FileService } from '../def/file-service';
 import { DirectoryEntry, Entry, Flags, Metadata } from '../index';
-import { FileInfo } from '@capacitor/filesystem';
 import { DeviceInfo } from '../../device/index';
 /**
  * Allows the user to look up the Entry for a file or directory referred to by a local URL.
@@ -68,7 +67,7 @@ export declare class FileServiceImpl implements FileService {
     listDir(directoryPath: string): Promise<{
         isFile: boolean;
         isDirectory: boolean;
-        name: FileInfo;
+        name: string;
         fullPath: string;
         filesystem: string;
         nativeURL: string;
