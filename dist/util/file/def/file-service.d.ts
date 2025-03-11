@@ -1,4 +1,3 @@
-import { FileInfo } from '@capacitor/filesystem';
 import { DirectoryEntry, Flags, Metadata } from '../index';
 export interface FileService {
     readAsText(path: string, file: string): Promise<string>;
@@ -32,7 +31,7 @@ export interface FileService {
     listDir(directoryPath: string): Promise<{
         isFile: boolean;
         isDirectory: boolean;
-        name: FileInfo;
+        name: string;
         fullPath: string;
         filesystem: string;
         nativeURL: string;
