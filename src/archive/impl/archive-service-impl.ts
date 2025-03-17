@@ -26,7 +26,6 @@ import { NetworkQueue } from '../../api/network-queue';
 import { SdkConfig } from '../../sdk-config';
 import { FilePaths } from '../../services/file-path/file-path.enum';
 import { FilePathService } from '../../services/file-path/file-path.service';
-
 interface ArchiveManifest {
     id: string;
     ver: string;
@@ -249,7 +248,6 @@ export class ArchiveServiceImpl implements ArchiveService {
     }
 
     import(importRequest: ArchiveImportRequest): Observable<ArchiveImportProgress> {
-
         if (!importRequest.objects.length) {
             return throwError(new InvalidRequestError('No archive objects to export'));
         }
@@ -269,17 +267,19 @@ export class ArchiveServiceImpl implements ArchiveService {
         }).pipe(
             mergeMap(({ workspacePath }) =>
                 concat(
-                    defer(() => from(this.fileService.createDir(workspacePath, false))).pipe(
+                    defer(() => {
+                        return from(this.fileService.createDir(workspacePath, false));
+                    }).pipe(
                         concatMap(() => this.extractZipArchive(lastResult, workspacePath))
                     ),
                     defer(() => {
                         const fileNameWithoutExtension = FileUtil.getFileName(importRequest.filePath).replace('.zip', '');
-
                         const extractedFolderPath = `${workspacePath}/${fileNameWithoutExtension}`;
-
-                        return this.readManifestFile(lastResult, extractedFolderPath, importRequest.objects.map(o => o.type))
+                        return this.readManifestFile(lastResult, workspacePath, importRequest.objects.map(o => o.type));
                     }),
-                    defer(() => this.generateImportTelemetries(lastResult, workspacePath)),
+                    defer(() => {
+                        return this.generateImportTelemetries(lastResult, workspacePath);
+                    }),
                     defer(() => {
                         return combineLatest(
                             importRequest.objects.map<Observable<{ type: ArchiveObjectType, progress: ArchiveObjectImportProgress }>>(object => {
@@ -300,7 +300,7 @@ export class ArchiveServiceImpl implements ArchiveService {
                                         ).import({
                                             filePath: importRequest.filePath
                                         }, {
-                                            workspacePath: extractedFolderPath,
+                                            workspacePath: workspacePath,
                                             items: lastResult!.progress
                                                 .get(ArchiveObjectType.TELEMETRY)!.pending as TelemetryArchivePackageMeta[]
                                         }).pipe(
@@ -376,15 +376,16 @@ export class ArchiveServiceImpl implements ArchiveService {
                 () => {
                     this.zipService.unzip(
                         `${workspacePath}/${FileUtil.getFileName(filePath)}`,
-                        { target: workspacePath + '/' },
+                        { target: workspacePath },
                         () => {
                             observer.next();
                             observer.complete();
-                        }, (e) => observer.error(e)
+                        }, (e) => {
+                            observer.error(e);
+                        }
                     );
                 },
                 (e) => {
-                    console.error(e);
                     observer.error(e);
                 }
             );
