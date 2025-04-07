@@ -17,6 +17,7 @@ import { ungzip } from 'pako/dist/pako_inflate';
 import { DownloadCertificateRequest } from "../../course/def/download-certificate-request";
 import { FilePaths } from "../../services/file-path/file-path.enum";
 import { FilePathService } from '../../services/file-path/file-path.service';
+import write_blob from "capacitor-blob-writer";
 
 @injectable()
 export class CertificateServiceImpl implements CertificateService {
@@ -66,15 +67,14 @@ export class CertificateServiceImpl implements CertificateService {
     downloadCertificate({ fileName, blob }: DownloadCertificateRequest): Observable<DownloadCertificateResponse> {
         return defer(async () => {
             const filePath = await FilePathService.getFilePath(FilePaths.EXTERNAL);
-            return await this.fileService.writeFile(
-                filePath,
-                fileName, blob as any
-            ).
-                then(() => {
-                    return {
-                        path: `${filePath}${fileName}`
-                    };
-                }). catch((e) => { throw new Error('Error while writing file') });
+            return await write_blob({
+                path: `${filePath}/${fileName}`,
+                blob
+            }).then(function () {
+                return {
+                    path: `${filePath}${fileName}`
+                };
+            }).catch((e) => { throw new Error('Error while writing file') });
         });
     }
 
