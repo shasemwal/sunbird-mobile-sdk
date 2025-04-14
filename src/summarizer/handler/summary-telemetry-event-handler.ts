@@ -246,11 +246,7 @@ export class SummaryTelemetryEventHandler implements ApiRequestHandler<Telemetry
                     } else {
                         console.log('No ContentSession ID found to use as AttemptId');
                     }
-                } else if (event.context.cdata) {
-                    const attemptId = event.context.cdata.find(c => c.type === 'AttemptId');
-                } else {
-                    console.log('No cdata in event context!');
-                }
+                } 
               
                 return this.processOEAssess(event).pipe(
                     tap(async () => {
@@ -263,12 +259,7 @@ export class SummaryTelemetryEventHandler implements ApiRequestHandler<Telemetry
                                 console.error(' Error capturing assessment event:', error);
                             }
                         } else {
-                            console.log('ASSESS_DEBUG: Not capturing assessment event, missing data:', {
-                                hasAttemptId: !!attemptIdData,
-                                hasUserId: !!context.userId,
-                                hasCourseId: !!context.courseId,
-                                hasBatchId: !!context.batchId
-                            });
+                            console.log('Not capturing assessment event, missing data:');
                         }
                     }),
                     tap(async () => {
