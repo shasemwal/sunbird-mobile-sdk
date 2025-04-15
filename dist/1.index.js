@@ -1,1 +1,610 @@
-(window.webpackJsonp=window.webpackJsonp||[]).push([[1],{381:function(t,e,i){"use strict";i.r(e),i.d(e,"FilesystemWeb",(function(){return a}));var r=i(82),o=i(116);function s(t){const e=t.split("/").filter(t=>"."!==t),i=[];return e.forEach(t=>{".."===t&&i.length>0&&".."!==i[i.length-1]?i.pop():i.push(t)}),i.join("/")}class a extends r.b{constructor(){super(...arguments),this.DB_VERSION=1,this.DB_NAME="Disc",this._writeCmds=["add","put","delete"],this.downloadFile=async t=>{var e,i;const o=Object(r.c)(t,t.webFetchExtra),s=await fetch(t.url,o);let a;if(t.progress)if(null==s?void 0:s.body){const e=s.body.getReader();let i=0;const r=[],o=s.headers.get("content-type"),n=parseInt(s.headers.get("content-length")||"0",10);for(;;){const{done:o,value:s}=await e.read();if(o)break;r.push(s),i+=(null==s?void 0:s.length)||0;const a={url:t.url,bytes:i,contentLength:n};this.notifyListeners("progress",a)}const c=new Uint8Array(i);let d=0;for(const t of r)void 0!==t&&(c.set(t,d),d+=t.length);a=new Blob([c.buffer],{type:o||void 0})}else a=new Blob;else a=await s.blob();return{path:(await this.writeFile({path:t.path,directory:null!==(e=t.directory)&&void 0!==e?e:void 0,recursive:null!==(i=t.recursive)&&void 0!==i&&i,data:a})).uri,blob:a}}}async initDb(){if(void 0!==this._db)return this._db;if(!("indexedDB"in window))throw this.unavailable("This browser doesn't support IndexedDB");return new Promise((t,e)=>{const i=indexedDB.open(this.DB_NAME,this.DB_VERSION);i.onupgradeneeded=a.doUpgrade,i.onsuccess=()=>{this._db=i.result,t(i.result)},i.onerror=()=>e(i.error),i.onblocked=()=>{console.warn("db blocked")}})}static doUpgrade(t){const e=t.target.result;switch(t.oldVersion){case 0:case 1:default:e.objectStoreNames.contains("FileStorage")&&e.deleteObjectStore("FileStorage");e.createObjectStore("FileStorage",{keyPath:"path"}).createIndex("by_folder","folder")}}async dbRequest(t,e){const i=-1!==this._writeCmds.indexOf(t)?"readwrite":"readonly";return this.initDb().then(r=>new Promise((o,s)=>{const a=r.transaction(["FileStorage"],i).objectStore("FileStorage")[t](...e);a.onsuccess=()=>o(a.result),a.onerror=()=>s(a.error)}))}async dbIndexRequest(t,e,i){const r=-1!==this._writeCmds.indexOf(e)?"readwrite":"readonly";return this.initDb().then(o=>new Promise((s,a)=>{const n=o.transaction(["FileStorage"],r).objectStore("FileStorage").index(t)[e](...i);n.onsuccess=()=>s(n.result),n.onerror=()=>a(n.error)}))}getPath(t,e){const i=void 0!==e?e.replace(/^[/]+|[/]+$/g,""):"";let r="";return void 0!==t&&(r+="/"+t),""!==e&&(r+="/"+i),r}async clear(){(await this.initDb()).transaction(["FileStorage"],"readwrite").objectStore("FileStorage").clear()}async readFile(t){const e=this.getPath(t.directory,t.path),i=await this.dbRequest("get",[e]);if(void 0===i)throw Error("File does not exist.");return{data:i.content?i.content:""}}async writeFile(t){const e=this.getPath(t.directory,t.path);let i=t.data;const r=t.encoding,o=t.recursive,s=await this.dbRequest("get",[e]);if(s&&"directory"===s.type)throw Error("The supplied path is a directory.");const a=e.substr(0,e.lastIndexOf("/"));if(void 0===await this.dbRequest("get",[a])){const e=a.indexOf("/",1);if(-1!==e){const i=a.substr(e);await this.mkdir({path:i,directory:t.directory,recursive:o})}}if(!(r||i instanceof Blob||(i=i.indexOf(",")>=0?i.split(",")[1]:i,this.isBase64String(i))))throw Error("The supplied data is not valid base64 content.");const n=Date.now(),c={path:e,folder:a,type:"file",size:i instanceof Blob?i.size:i.length,ctime:n,mtime:n,content:i};return await this.dbRequest("put",[c]),{uri:c.path}}async appendFile(t){const e=this.getPath(t.directory,t.path);let i=t.data;const r=t.encoding,o=e.substr(0,e.lastIndexOf("/")),s=Date.now();let a=s;const n=await this.dbRequest("get",[e]);if(n&&"directory"===n.type)throw Error("The supplied path is a directory.");if(void 0===await this.dbRequest("get",[o])){const e=o.indexOf("/",1);if(-1!==e){const i=o.substr(e);await this.mkdir({path:i,directory:t.directory,recursive:!0})}}if(!r&&!this.isBase64String(i))throw Error("The supplied data is not valid base64 content.");if(void 0!==n){if(n.content instanceof Blob)throw Error("The occupied entry contains a Blob object which cannot be appended to.");i=void 0===n.content||r?n.content+i:btoa(atob(n.content)+atob(i)),a=n.ctime}const c={path:e,folder:o,type:"file",size:i.length,ctime:a,mtime:s,content:i};await this.dbRequest("put",[c])}async deleteFile(t){const e=this.getPath(t.directory,t.path);if(void 0===await this.dbRequest("get",[e]))throw Error("File does not exist.");if(0!==(await this.dbIndexRequest("by_folder","getAllKeys",[IDBKeyRange.only(e)])).length)throw Error("Folder is not empty.");await this.dbRequest("delete",[e])}async mkdir(t){const e=this.getPath(t.directory,t.path),i=t.recursive,r=e.substr(0,e.lastIndexOf("/")),o=(e.match(/\//g)||[]).length,s=await this.dbRequest("get",[r]),a=await this.dbRequest("get",[e]);if(1===o)throw Error("Cannot create Root directory");if(void 0!==a)throw Error("Current directory does already exist.");if(!i&&2!==o&&void 0===s)throw Error("Parent directory must exist");if(i&&2!==o&&void 0===s){const e=r.substr(r.indexOf("/",1));await this.mkdir({path:e,directory:t.directory,recursive:i})}const n=Date.now(),c={path:e,folder:r,type:"directory",size:0,ctime:n,mtime:n};await this.dbRequest("put",[c])}async rmdir(t){const{path:e,directory:i,recursive:r}=t,o=this.getPath(i,e),s=await this.dbRequest("get",[o]);if(void 0===s)throw Error("Folder does not exist.");if("directory"!==s.type)throw Error("Requested path is not a directory");const a=await this.readdir({path:e,directory:i});if(0!==a.files.length&&!r)throw Error("Folder is not empty");for(const t of a.files){const o=`${e}/${t.name}`;"file"===(await this.stat({path:o,directory:i})).type?await this.deleteFile({path:o,directory:i}):await this.rmdir({path:o,directory:i,recursive:r})}await this.dbRequest("delete",[o])}async readdir(t){const e=this.getPath(t.directory,t.path),i=await this.dbRequest("get",[e]);if(""!==t.path&&void 0===i)throw Error("Folder does not exist.");const r=await this.dbIndexRequest("by_folder","getAllKeys",[IDBKeyRange.only(e)]);return{files:await Promise.all(r.map(async t=>{let i=await this.dbRequest("get",[t]);return void 0===i&&(i=await this.dbRequest("get",[t+"/"])),{name:t.substring(e.length+1),type:i.type,size:i.size,ctime:i.ctime,mtime:i.mtime,uri:i.path}}))}}async getUri(t){const e=this.getPath(t.directory,t.path);let i=await this.dbRequest("get",[e]);return void 0===i&&(i=await this.dbRequest("get",[e+"/"])),{uri:(null==i?void 0:i.path)||e}}async stat(t){const e=this.getPath(t.directory,t.path);let i=await this.dbRequest("get",[e]);if(void 0===i&&(i=await this.dbRequest("get",[e+"/"])),void 0===i)throw Error("Entry does not exist.");return{type:i.type,size:i.size,ctime:i.ctime,mtime:i.mtime,uri:i.path}}async rename(t){await this._copy(t,!0)}async copy(t){return this._copy(t,!1)}async requestPermissions(){return{publicStorage:"granted"}}async checkPermissions(){return{publicStorage:"granted"}}async _copy(t,e=!1){let{toDirectory:i}=t;const{to:r,from:a,directory:n}=t;if(!r||!a)throw Error("Both to and from must be provided");i||(i=n);const c=this.getPath(n,a),d=this.getPath(i,r);if(c===d)return{uri:d};if(function(t,e){t=s(t),e=s(e);const i=t.split("/"),r=e.split("/");return t!==e&&i.every((t,e)=>t===r[e])}(c,d))throw Error("To path cannot contain the from path");let h;try{h=await this.stat({path:r,directory:i})}catch(t){const e=r.split("/");e.pop();const o=e.join("/");if(e.length>0){if("directory"!==(await this.stat({path:o,directory:i})).type)throw new Error("Parent directory of the to path is a file")}}if(h&&"directory"===h.type)throw new Error("Cannot overwrite a directory with a file");const l=await this.stat({path:a,directory:n}),u=async(t,e,r)=>{const o=this.getPath(i,t),s=await this.dbRequest("get",[o]);s.ctime=e,s.mtime=r,await this.dbRequest("put",[s])},y=l.ctime?l.ctime:Date.now();switch(l.type){case"file":{const t=await this.readFile({path:a,directory:n});let s;e&&await this.deleteFile({path:a,directory:n}),t.data instanceof Blob||this.isBase64String(t.data)||(s=o.b.UTF8);const c=await this.writeFile({path:r,directory:i,data:t.data,encoding:s});return e&&await u(r,y,l.mtime),c}case"directory":{if(h)throw Error("Cannot move a directory over an existing object");try{await this.mkdir({path:r,directory:i,recursive:!1}),e&&await u(r,y,l.mtime)}catch(t){}const t=(await this.readdir({path:a,directory:n})).files;for(const o of t)await this._copy({from:`${a}/${o.name}`,to:`${r}/${o.name}`,directory:n,toDirectory:i},e);e&&await this.rmdir({path:a,directory:n})}}return{uri:d}}isBase64String(t){try{return btoa(atob(t))==t}catch(t){return!1}}}a._debug=!0}}]);
+(window["webpackJsonp"] = window["webpackJsonp"] || []).push([[1],{
+
+/***/ 381:
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FilesystemWeb", function() { return FilesystemWeb; });
+/* harmony import */ var _capacitor_core__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(82);
+/* harmony import */ var _definitions__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(116);
+
+
+function resolve(path) {
+    const posix = path.split('/').filter(item => item !== '.');
+    const newPosix = [];
+    posix.forEach(item => {
+        if (item === '..' &&
+            newPosix.length > 0 &&
+            newPosix[newPosix.length - 1] !== '..') {
+            newPosix.pop();
+        }
+        else {
+            newPosix.push(item);
+        }
+    });
+    return newPosix.join('/');
+}
+function isPathParent(parent, children) {
+    parent = resolve(parent);
+    children = resolve(children);
+    const pathsA = parent.split('/');
+    const pathsB = children.split('/');
+    return (parent !== children &&
+        pathsA.every((value, index) => value === pathsB[index]));
+}
+class FilesystemWeb extends _capacitor_core__WEBPACK_IMPORTED_MODULE_0__[/* WebPlugin */ "b"] {
+    constructor() {
+        super(...arguments);
+        this.DB_VERSION = 1;
+        this.DB_NAME = 'Disc';
+        this._writeCmds = ['add', 'put', 'delete'];
+        /**
+         * Function that performs a http request to a server and downloads the file to the specified destination
+         *
+         * @param options the options for the download operation
+         * @returns a promise that resolves with the download file result
+         */
+        this.downloadFile = async (options) => {
+            var _a, _b;
+            const requestInit = Object(_capacitor_core__WEBPACK_IMPORTED_MODULE_0__[/* buildRequestInit */ "c"])(options, options.webFetchExtra);
+            const response = await fetch(options.url, requestInit);
+            let blob;
+            if (!options.progress)
+                blob = await response.blob();
+            else if (!(response === null || response === void 0 ? void 0 : response.body))
+                blob = new Blob();
+            else {
+                const reader = response.body.getReader();
+                let bytes = 0;
+                const chunks = [];
+                const contentType = response.headers.get('content-type');
+                const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done)
+                        break;
+                    chunks.push(value);
+                    bytes += (value === null || value === void 0 ? void 0 : value.length) || 0;
+                    const status = {
+                        url: options.url,
+                        bytes,
+                        contentLength,
+                    };
+                    this.notifyListeners('progress', status);
+                }
+                const allChunks = new Uint8Array(bytes);
+                let position = 0;
+                for (const chunk of chunks) {
+                    if (typeof chunk === 'undefined')
+                        continue;
+                    allChunks.set(chunk, position);
+                    position += chunk.length;
+                }
+                blob = new Blob([allChunks.buffer], { type: contentType || undefined });
+            }
+            const result = await this.writeFile({
+                path: options.path,
+                directory: (_a = options.directory) !== null && _a !== void 0 ? _a : undefined,
+                recursive: (_b = options.recursive) !== null && _b !== void 0 ? _b : false,
+                data: blob,
+            });
+            return { path: result.uri, blob };
+        };
+    }
+    async initDb() {
+        if (this._db !== undefined) {
+            return this._db;
+        }
+        if (!('indexedDB' in window)) {
+            throw this.unavailable("This browser doesn't support IndexedDB");
+        }
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+            request.onupgradeneeded = FilesystemWeb.doUpgrade;
+            request.onsuccess = () => {
+                this._db = request.result;
+                resolve(request.result);
+            };
+            request.onerror = () => reject(request.error);
+            request.onblocked = () => {
+                console.warn('db blocked');
+            };
+        });
+    }
+    static doUpgrade(event) {
+        const eventTarget = event.target;
+        const db = eventTarget.result;
+        switch (event.oldVersion) {
+            case 0:
+            case 1:
+            default: {
+                if (db.objectStoreNames.contains('FileStorage')) {
+                    db.deleteObjectStore('FileStorage');
+                }
+                const store = db.createObjectStore('FileStorage', { keyPath: 'path' });
+                store.createIndex('by_folder', 'folder');
+            }
+        }
+    }
+    async dbRequest(cmd, args) {
+        const readFlag = this._writeCmds.indexOf(cmd) !== -1 ? 'readwrite' : 'readonly';
+        return this.initDb().then((conn) => {
+            return new Promise((resolve, reject) => {
+                const tx = conn.transaction(['FileStorage'], readFlag);
+                const store = tx.objectStore('FileStorage');
+                const req = store[cmd](...args);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        });
+    }
+    async dbIndexRequest(indexName, cmd, args) {
+        const readFlag = this._writeCmds.indexOf(cmd) !== -1 ? 'readwrite' : 'readonly';
+        return this.initDb().then((conn) => {
+            return new Promise((resolve, reject) => {
+                const tx = conn.transaction(['FileStorage'], readFlag);
+                const store = tx.objectStore('FileStorage');
+                const index = store.index(indexName);
+                const req = index[cmd](...args);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        });
+    }
+    getPath(directory, uriPath) {
+        const cleanedUriPath = uriPath !== undefined ? uriPath.replace(/^[/]+|[/]+$/g, '') : '';
+        let fsPath = '';
+        if (directory !== undefined)
+            fsPath += '/' + directory;
+        if (uriPath !== '')
+            fsPath += '/' + cleanedUriPath;
+        return fsPath;
+    }
+    async clear() {
+        const conn = await this.initDb();
+        const tx = conn.transaction(['FileStorage'], 'readwrite');
+        const store = tx.objectStore('FileStorage');
+        store.clear();
+    }
+    /**
+     * Read a file from disk
+     * @param options options for the file read
+     * @return a promise that resolves with the read file data result
+     */
+    async readFile(options) {
+        const path = this.getPath(options.directory, options.path);
+        // const encoding = options.encoding;
+        const entry = (await this.dbRequest('get', [path]));
+        if (entry === undefined)
+            throw Error('File does not exist.');
+        return { data: entry.content ? entry.content : '' };
+    }
+    /**
+     * Write a file to disk in the specified location on device
+     * @param options options for the file write
+     * @return a promise that resolves with the file write result
+     */
+    async writeFile(options) {
+        const path = this.getPath(options.directory, options.path);
+        let data = options.data;
+        const encoding = options.encoding;
+        const doRecursive = options.recursive;
+        const occupiedEntry = (await this.dbRequest('get', [path]));
+        if (occupiedEntry && occupiedEntry.type === 'directory')
+            throw Error('The supplied path is a directory.');
+        const parentPath = path.substr(0, path.lastIndexOf('/'));
+        const parentEntry = (await this.dbRequest('get', [parentPath]));
+        if (parentEntry === undefined) {
+            const subDirIndex = parentPath.indexOf('/', 1);
+            if (subDirIndex !== -1) {
+                const parentArgPath = parentPath.substr(subDirIndex);
+                await this.mkdir({
+                    path: parentArgPath,
+                    directory: options.directory,
+                    recursive: doRecursive,
+                });
+            }
+        }
+        if (!encoding && !(data instanceof Blob)) {
+            data = data.indexOf(',') >= 0 ? data.split(',')[1] : data;
+            if (!this.isBase64String(data))
+                throw Error('The supplied data is not valid base64 content.');
+        }
+        const now = Date.now();
+        const pathObj = {
+            path: path,
+            folder: parentPath,
+            type: 'file',
+            size: data instanceof Blob ? data.size : data.length,
+            ctime: now,
+            mtime: now,
+            content: data,
+        };
+        await this.dbRequest('put', [pathObj]);
+        return {
+            uri: pathObj.path,
+        };
+    }
+    /**
+     * Append to a file on disk in the specified location on device
+     * @param options options for the file append
+     * @return a promise that resolves with the file write result
+     */
+    async appendFile(options) {
+        const path = this.getPath(options.directory, options.path);
+        let data = options.data;
+        const encoding = options.encoding;
+        const parentPath = path.substr(0, path.lastIndexOf('/'));
+        const now = Date.now();
+        let ctime = now;
+        const occupiedEntry = (await this.dbRequest('get', [path]));
+        if (occupiedEntry && occupiedEntry.type === 'directory')
+            throw Error('The supplied path is a directory.');
+        const parentEntry = (await this.dbRequest('get', [parentPath]));
+        if (parentEntry === undefined) {
+            const subDirIndex = parentPath.indexOf('/', 1);
+            if (subDirIndex !== -1) {
+                const parentArgPath = parentPath.substr(subDirIndex);
+                await this.mkdir({
+                    path: parentArgPath,
+                    directory: options.directory,
+                    recursive: true,
+                });
+            }
+        }
+        if (!encoding && !this.isBase64String(data))
+            throw Error('The supplied data is not valid base64 content.');
+        if (occupiedEntry !== undefined) {
+            if (occupiedEntry.content instanceof Blob) {
+                throw Error('The occupied entry contains a Blob object which cannot be appended to.');
+            }
+            if (occupiedEntry.content !== undefined && !encoding) {
+                data = btoa(atob(occupiedEntry.content) + atob(data));
+            }
+            else {
+                data = occupiedEntry.content + data;
+            }
+            ctime = occupiedEntry.ctime;
+        }
+        const pathObj = {
+            path: path,
+            folder: parentPath,
+            type: 'file',
+            size: data.length,
+            ctime: ctime,
+            mtime: now,
+            content: data,
+        };
+        await this.dbRequest('put', [pathObj]);
+    }
+    /**
+     * Delete a file from disk
+     * @param options options for the file delete
+     * @return a promise that resolves with the deleted file data result
+     */
+    async deleteFile(options) {
+        const path = this.getPath(options.directory, options.path);
+        const entry = (await this.dbRequest('get', [path]));
+        if (entry === undefined)
+            throw Error('File does not exist.');
+        const entries = await this.dbIndexRequest('by_folder', 'getAllKeys', [
+            IDBKeyRange.only(path),
+        ]);
+        if (entries.length !== 0)
+            throw Error('Folder is not empty.');
+        await this.dbRequest('delete', [path]);
+    }
+    /**
+     * Create a directory.
+     * @param options options for the mkdir
+     * @return a promise that resolves with the mkdir result
+     */
+    async mkdir(options) {
+        const path = this.getPath(options.directory, options.path);
+        const doRecursive = options.recursive;
+        const parentPath = path.substr(0, path.lastIndexOf('/'));
+        const depth = (path.match(/\//g) || []).length;
+        const parentEntry = (await this.dbRequest('get', [parentPath]));
+        const occupiedEntry = (await this.dbRequest('get', [path]));
+        if (depth === 1)
+            throw Error('Cannot create Root directory');
+        if (occupiedEntry !== undefined)
+            throw Error('Current directory does already exist.');
+        if (!doRecursive && depth !== 2 && parentEntry === undefined)
+            throw Error('Parent directory must exist');
+        if (doRecursive && depth !== 2 && parentEntry === undefined) {
+            const parentArgPath = parentPath.substr(parentPath.indexOf('/', 1));
+            await this.mkdir({
+                path: parentArgPath,
+                directory: options.directory,
+                recursive: doRecursive,
+            });
+        }
+        const now = Date.now();
+        const pathObj = {
+            path: path,
+            folder: parentPath,
+            type: 'directory',
+            size: 0,
+            ctime: now,
+            mtime: now,
+        };
+        await this.dbRequest('put', [pathObj]);
+    }
+    /**
+     * Remove a directory
+     * @param options the options for the directory remove
+     */
+    async rmdir(options) {
+        const { path, directory, recursive } = options;
+        const fullPath = this.getPath(directory, path);
+        const entry = (await this.dbRequest('get', [fullPath]));
+        if (entry === undefined)
+            throw Error('Folder does not exist.');
+        if (entry.type !== 'directory')
+            throw Error('Requested path is not a directory');
+        const readDirResult = await this.readdir({ path, directory });
+        if (readDirResult.files.length !== 0 && !recursive)
+            throw Error('Folder is not empty');
+        for (const entry of readDirResult.files) {
+            const entryPath = `${path}/${entry.name}`;
+            const entryObj = await this.stat({ path: entryPath, directory });
+            if (entryObj.type === 'file') {
+                await this.deleteFile({ path: entryPath, directory });
+            }
+            else {
+                await this.rmdir({ path: entryPath, directory, recursive });
+            }
+        }
+        await this.dbRequest('delete', [fullPath]);
+    }
+    /**
+     * Return a list of files from the directory (not recursive)
+     * @param options the options for the readdir operation
+     * @return a promise that resolves with the readdir directory listing result
+     */
+    async readdir(options) {
+        const path = this.getPath(options.directory, options.path);
+        const entry = (await this.dbRequest('get', [path]));
+        if (options.path !== '' && entry === undefined)
+            throw Error('Folder does not exist.');
+        const entries = await this.dbIndexRequest('by_folder', 'getAllKeys', [IDBKeyRange.only(path)]);
+        const files = await Promise.all(entries.map(async (e) => {
+            let subEntry = (await this.dbRequest('get', [e]));
+            if (subEntry === undefined) {
+                subEntry = (await this.dbRequest('get', [e + '/']));
+            }
+            return {
+                name: e.substring(path.length + 1),
+                type: subEntry.type,
+                size: subEntry.size,
+                ctime: subEntry.ctime,
+                mtime: subEntry.mtime,
+                uri: subEntry.path,
+            };
+        }));
+        return { files: files };
+    }
+    /**
+     * Return full File URI for a path and directory
+     * @param options the options for the stat operation
+     * @return a promise that resolves with the file stat result
+     */
+    async getUri(options) {
+        const path = this.getPath(options.directory, options.path);
+        let entry = (await this.dbRequest('get', [path]));
+        if (entry === undefined) {
+            entry = (await this.dbRequest('get', [path + '/']));
+        }
+        return {
+            uri: (entry === null || entry === void 0 ? void 0 : entry.path) || path,
+        };
+    }
+    /**
+     * Return data about a file
+     * @param options the options for the stat operation
+     * @return a promise that resolves with the file stat result
+     */
+    async stat(options) {
+        const path = this.getPath(options.directory, options.path);
+        let entry = (await this.dbRequest('get', [path]));
+        if (entry === undefined) {
+            entry = (await this.dbRequest('get', [path + '/']));
+        }
+        if (entry === undefined)
+            throw Error('Entry does not exist.');
+        return {
+            type: entry.type,
+            size: entry.size,
+            ctime: entry.ctime,
+            mtime: entry.mtime,
+            uri: entry.path,
+        };
+    }
+    /**
+     * Rename a file or directory
+     * @param options the options for the rename operation
+     * @return a promise that resolves with the rename result
+     */
+    async rename(options) {
+        await this._copy(options, true);
+        return;
+    }
+    /**
+     * Copy a file or directory
+     * @param options the options for the copy operation
+     * @return a promise that resolves with the copy result
+     */
+    async copy(options) {
+        return this._copy(options, false);
+    }
+    async requestPermissions() {
+        return { publicStorage: 'granted' };
+    }
+    async checkPermissions() {
+        return { publicStorage: 'granted' };
+    }
+    /**
+     * Function that can perform a copy or a rename
+     * @param options the options for the rename operation
+     * @param doRename whether to perform a rename or copy operation
+     * @return a promise that resolves with the result
+     */
+    async _copy(options, doRename = false) {
+        let { toDirectory } = options;
+        const { to, from, directory: fromDirectory } = options;
+        if (!to || !from) {
+            throw Error('Both to and from must be provided');
+        }
+        // If no "to" directory is provided, use the "from" directory
+        if (!toDirectory) {
+            toDirectory = fromDirectory;
+        }
+        const fromPath = this.getPath(fromDirectory, from);
+        const toPath = this.getPath(toDirectory, to);
+        // Test that the "to" and "from" locations are different
+        if (fromPath === toPath) {
+            return {
+                uri: toPath,
+            };
+        }
+        if (isPathParent(fromPath, toPath)) {
+            throw Error('To path cannot contain the from path');
+        }
+        // Check the state of the "to" location
+        let toObj;
+        try {
+            toObj = await this.stat({
+                path: to,
+                directory: toDirectory,
+            });
+        }
+        catch (e) {
+            // To location does not exist, ensure the directory containing "to" location exists and is a directory
+            const toPathComponents = to.split('/');
+            toPathComponents.pop();
+            const toPath = toPathComponents.join('/');
+            // Check the containing directory of the "to" location exists
+            if (toPathComponents.length > 0) {
+                const toParentDirectory = await this.stat({
+                    path: toPath,
+                    directory: toDirectory,
+                });
+                if (toParentDirectory.type !== 'directory') {
+                    throw new Error('Parent directory of the to path is a file');
+                }
+            }
+        }
+        // Cannot overwrite a directory
+        if (toObj && toObj.type === 'directory') {
+            throw new Error('Cannot overwrite a directory with a file');
+        }
+        // Ensure the "from" object exists
+        const fromObj = await this.stat({
+            path: from,
+            directory: fromDirectory,
+        });
+        // Set the mtime/ctime of the supplied path
+        const updateTime = async (path, ctime, mtime) => {
+            const fullPath = this.getPath(toDirectory, path);
+            const entry = (await this.dbRequest('get', [fullPath]));
+            entry.ctime = ctime;
+            entry.mtime = mtime;
+            await this.dbRequest('put', [entry]);
+        };
+        const ctime = fromObj.ctime ? fromObj.ctime : Date.now();
+        switch (fromObj.type) {
+            // The "from" object is a file
+            case 'file': {
+                // Read the file
+                const file = await this.readFile({
+                    path: from,
+                    directory: fromDirectory,
+                });
+                // Optionally remove the file
+                if (doRename) {
+                    await this.deleteFile({
+                        path: from,
+                        directory: fromDirectory,
+                    });
+                }
+                let encoding;
+                if (!(file.data instanceof Blob) && !this.isBase64String(file.data)) {
+                    encoding = _definitions__WEBPACK_IMPORTED_MODULE_1__[/* Encoding */ "b"].UTF8;
+                }
+                // Write the file to the new location
+                const writeResult = await this.writeFile({
+                    path: to,
+                    directory: toDirectory,
+                    data: file.data,
+                    encoding: encoding,
+                });
+                // Copy the mtime/ctime of a renamed file
+                if (doRename) {
+                    await updateTime(to, ctime, fromObj.mtime);
+                }
+                // Resolve promise
+                return writeResult;
+            }
+            case 'directory': {
+                if (toObj) {
+                    throw Error('Cannot move a directory over an existing object');
+                }
+                try {
+                    // Create the to directory
+                    await this.mkdir({
+                        path: to,
+                        directory: toDirectory,
+                        recursive: false,
+                    });
+                    // Copy the mtime/ctime of a renamed directory
+                    if (doRename) {
+                        await updateTime(to, ctime, fromObj.mtime);
+                    }
+                }
+                catch (e) {
+                    // ignore
+                }
+                // Iterate over the contents of the from location
+                const contents = (await this.readdir({
+                    path: from,
+                    directory: fromDirectory,
+                })).files;
+                for (const filename of contents) {
+                    // Move item from the from directory to the to directory
+                    await this._copy({
+                        from: `${from}/${filename.name}`,
+                        to: `${to}/${filename.name}`,
+                        directory: fromDirectory,
+                        toDirectory,
+                    }, doRename);
+                }
+                // Optionally remove the original from directory
+                if (doRename) {
+                    await this.rmdir({
+                        path: from,
+                        directory: fromDirectory,
+                    });
+                }
+            }
+        }
+        return {
+            uri: toPath,
+        };
+    }
+    isBase64String(str) {
+        try {
+            return btoa(atob(str)) == str;
+        }
+        catch (err) {
+            return false;
+        }
+    }
+}
+FilesystemWeb._debug = true;
+//# sourceMappingURL=web.js.map
+
+/***/ })
+
+}]);

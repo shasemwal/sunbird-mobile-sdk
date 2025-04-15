@@ -235,20 +235,41 @@ export class SummaryTelemetryEventHandler implements ApiRequestHandler<Telemetry
                     }
                 }
             } else if (event.eid === 'ASSESS' && SummaryTelemetryEventHandler.checkPData(event.context.pdata)) {
+ 
+                if (event.context.cdata && !event.context.cdata.find(c => c.type === 'AttemptId')) {            
+                    const contentSessionId = event.context.cdata.find(c => c.type === 'ContentSession')?.id;
+                    if (contentSessionId) {       
+                        event.context.cdata.push({
+                            id: contentSessionId,
+                            type: 'AttemptId'
+                        });
+                    } else {
+                        console.log('No ContentSession ID found to use as AttemptId');
+                    }
+                } 
+              
                 return this.processOEAssess(event).pipe(
                     tap(async () => {
                         const context = await this.getCourseContext().toPromise();
-                        if (
-                            event.context.cdata.find((c) => c.type === 'AttemptId')
-                            && context.userId && context.courseId && context.batchId
-                        ) {
-                            await this.courseService.captureAssessmentEvent({event, courseContext: context});
+                        const attemptIdData = event.context.cdata.find((c) => c.type === 'AttemptId');
+                     if (attemptIdData && context.userId && context.courseId && context.batchId) {
+                            try {
+                                await this.courseService.captureAssessmentEvent({event, courseContext: context});
+                            } catch (error) {
+                                console.error(' Error capturing assessment event:', error);
+                            }
+                        } else {
+                            console.log('Not capturing assessment event, missing data:');
                         }
                     }),
                     tap(async () => {
-                        await this.summarizerService.saveLearnerAssessmentDetails(event).pipe(
-                            mapTo(undefined)
-                        ).toPromise();
+                        try {
+                            await this.summarizerService.saveLearnerAssessmentDetails(event).pipe(
+                                mapTo(undefined)
+                            ).toPromise();
+                        } catch (error) {
+                            console.error('Error saving learner assessment details:', error);
+                        }
                     })
                 ).toPromise();
             } else if (event.eid === 'END') {
