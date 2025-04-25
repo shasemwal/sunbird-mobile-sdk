@@ -1,6 +1,7 @@
 version: 2.1
 orbs:
   browser-tools: circleci/browser-tools@1.4.8
+
 jobs:
   build:
     docker:
@@ -9,10 +10,11 @@ jobs:
       - browser-tools/install-chrome
       - browser-tools/install-chromedriver
       - run:
+          name: Check install
           command: |
             google-chrome --version
             chromedriver --version
-          name: Check install
+
       - checkout
       - run:
           name: Check current version of node
@@ -21,10 +23,13 @@ jobs:
           keys:
             - node_modules_cache_{{ checksum "package-lock.json" }}
       - run:
+          name: Clean npm cache
+          command: npm cache clean --force
+      - run:
           name: Install project dependencies
           command: |
             if [ ! -d "node_modules" ]; then
-            npm ci -f
+              npm ci -f
             fi
       - save_cache:
           key: node_modules_cache_{{ checksum "package-lock.json" }}
@@ -35,7 +40,7 @@ jobs:
       - run:
           name: Publish to NPM
           command: |
-            if [ -z $CIRCLE_PR_NUMBER ]; then
+            if [ -z "$CIRCLE_PR_NUMBER" ]; then
               npm run build:prod && npm pack ./dist
               echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/.npmrc
               npm publish project-sunbird-sunbird-sdk-*
