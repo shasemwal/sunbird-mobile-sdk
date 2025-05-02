@@ -564,7 +564,9 @@ export class ContentServiceImpl implements ContentService, DownloadCompleteDeleg
             map((contentResponse: RelevantContentResponse) => {
                 const response: RelevantContentResponsePlayer = {};
                 response.next = contentResponse.nextContent ? { content: contentResponse.nextContent! } : undefined;
-                //response.prev  = contentResponse.previousContent! ? { content: contentResponse.previousContent! } : undefined;
+
+                //response.prev = contentResponse.previousContent! ? { content: contentResponse.previousContent! } : undefined;
+                
                 return response;
             })
         );
