@@ -138,7 +138,7 @@ export class FrameworkServiceImpl implements FrameworkService {
     getCategoryTerms(frameworkId: string): Observable<any> {
         const apiRequest: Request = new Request.Builder()
             .withType(HttpRequestType.GET)
-            .withPath(this.sdkConfig.frameworkServiceConfig.frameworkApiPath + FrameworkServiceImpl.READ_ORGANIZATION_ENDPOINT)
+            .withPath(this.sdkConfig.frameworkServiceConfig.frameworkApiPath + FrameworkServiceImpl.READ_ORGANIZATION_ENDPOINT + '/' + frameworkId)
             .withBearerToken(true)
             .build();
 
