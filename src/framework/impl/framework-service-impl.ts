@@ -142,9 +142,9 @@ export class FrameworkServiceImpl implements FrameworkService {
             .withBearerToken(true)
             .build();
 
-        return this.apiService.fetch<{ result: { response: any } }>(apiRequest).pipe(
+        return this.apiService.fetch<{ result: any }>(apiRequest).pipe(
             map((response) => {
-                return response.body.result.response;
+                return response.body.result.framework;
             })
         );
     }
